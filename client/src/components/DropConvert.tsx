@@ -141,16 +141,16 @@ const DropConvert = () => {
                 console.log('Download result object:', result);
                 console.log('Worker result blob size:', result.size, 'bytes, type:', result.type);
                 
-                // Use the MIME type that matches the conversion direction or default to the worker-provided one
-                const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
-                console.log('Using MIME type for download:', actualMimeType);
-                
-                // Force download behavior with appropriate MIME type
+                // Make download MIME type decision based on file count and conversion type
+                // Default to octet-stream to force download in all browsers
                 let downloadMimeType = 'application/octet-stream';
                 
-                // For ZIP files, keep the ZIP MIME type
-                if (isZipFile) {
+                // Use ZIP MIME type for multiple files
+                if (files.length > 1) {
                   downloadMimeType = 'application/zip';
+                  console.log('Using ZIP MIME type for multiple files:', files.length);
+                } else {
+                  console.log('Using force-download MIME type for single file');
                 }
                 
                 // Create a new blob with the download MIME type
@@ -161,27 +161,14 @@ const DropConvert = () => {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = forceUrl;
                 
-                // Log the type and flags for debugging
-                console.log('Download type flags:', { 
-                  filesCount: files.length, 
-                  isZipFile, 
-                  messageType,
-                  originalFileName 
-                });
+                // In all cases, make the decision based on the original files.length
+                // Not the worker response - this ensures consistent behavior
+                const fileCount = files.length;
                 
-                // Force ZIP download ONLY for multiple files (2+)
-                // Force single file download for exactly 1 file 
-                const isSingleFile = files.length === 1;
-                const forceZipDownload = files.length > 1;
+                console.log('Making download decision based on original file count:', fileCount);
                 
-                console.log('Download decision:', {
-                  isSingleFile,
-                  forceZipDownload,
-                  fileCount: files.length
-                });
-                
-                // For single files, always use direct download regardless of isZipFile flag
-                if (isSingleFile && !forceZipDownload) {
+                if (fileCount === 1) {
+                  // SINGLE FILE - always direct download with proper extension
                   // Make sure we preserve the file extension by explicitly setting it
                   // Use the originalFileName from the worker if available, otherwise generate it from the file
                   let baseFileName = originalFileName || 
