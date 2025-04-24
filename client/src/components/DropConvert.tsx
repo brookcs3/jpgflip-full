@@ -158,11 +158,14 @@ const DropConvert = () => {
                   const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
                   
                   // Make sure to have proper file extensions
-                  let file1Name = files[0].name;
-                  // First remove any existing image extension
-                  file1Name = file1Name.replace(/\.(avif|png|jpe?g)$/i, '');
-                  // Then add the proper extension based on conversion mode
-                  file1Name = file1Name + (jpgToAvif ? '.avif' : '.jpg');
+                  // Use the filename from the worker if available, otherwise from files array
+                  let file1Name = firstFileName || (files[0] ? files[0].name : 'converted-file-1');
+                  // First remove any existing image extension if needed
+                  if (!firstFileName) {
+                    file1Name = file1Name.replace(/\.(avif|png|jpe?g)$/i, '');
+                    // Then add the proper extension based on conversion mode
+                    file1Name = file1Name + (jpgToAvif ? '.avif' : '.jpg');
+                  }
                   
                   const downloadLink1 = document.createElement('a');
                   downloadLink1.href = forceUrl1;
@@ -193,11 +196,14 @@ const DropConvert = () => {
                     const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
                     
                     // Make sure to have proper file extensions
-                    let file2Name = files[1].name;
-                    // First remove any existing image extension
-                    file2Name = file2Name.replace(/\.(avif|png|jpe?g)$/i, '');
-                    // Then add the proper extension based on conversion mode
-                    file2Name = file2Name + (jpgToAvif ? '.avif' : '.jpg');
+                    // Use the filename from the worker if available, otherwise from files array
+                    let file2Name = secondFileName || (files[1] ? files[1].name : 'converted-file-2');
+                    // First remove any existing image extension if needed
+                    if (!secondFileName) {
+                      file2Name = file2Name.replace(/\.(avif|png|jpe?g)$/i, '');
+                      // Then add the proper extension based on conversion mode
+                      file2Name = file2Name + (jpgToAvif ? '.avif' : '.jpg');
+                    }
                     
                     const downloadLink2 = document.createElement('a');
                     downloadLink2.href = forceUrl2;
@@ -239,7 +245,8 @@ const DropConvert = () => {
                   
                   if (files.length === 1) {
                     // Make sure we preserve the file extension by explicitly setting it
-                    let fileName = files[0].name;
+                    // Safely access file name or provide fallback
+                    let fileName = files[0] ? files[0].name : 'converted-file';
                     // First remove any existing image extension
                     fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
                     // Then add the proper extension based on what we received from the worker or fallback to our toggle
@@ -353,7 +360,9 @@ const DropConvert = () => {
           
           const downloadLink = document.createElement('a');
           downloadLink.href = forceUrl;
-          const fileName = file.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          // Make sure file exists and has a name property
+          const safeFileName = file && file.name ? file.name : 'converted-file';
+          const fileName = safeFileName.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
           downloadLink.download = fileName;
           downloadLink.setAttribute('download', fileName); // Explicit download attribute
           
@@ -413,7 +422,9 @@ const DropConvert = () => {
           // Download first file
           const downloadLink1 = document.createElement('a');
           downloadLink1.href = forceUrl1;
-          const fileName1 = file1.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          // Make sure file exists and has a name property
+          const safeFileName1 = file1 && file1.name ? file1.name : 'converted-file-1';
+          const fileName1 = safeFileName1.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
           downloadLink1.download = fileName1;
           downloadLink1.setAttribute('download', fileName1); // Explicit download attribute
           document.body.appendChild(downloadLink1);
@@ -431,7 +442,9 @@ const DropConvert = () => {
             // Download second file
             const downloadLink2 = document.createElement('a');
             downloadLink2.href = forceUrl2;
-            const fileName2 = file2.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+            // Make sure file exists and has a name property
+            const safeFileName2 = file2 && file2.name ? file2.name : 'converted-file-2';
+            const fileName2 = safeFileName2.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
             downloadLink2.download = fileName2;
             downloadLink2.setAttribute('download', fileName2); // Explicit download attribute
             document.body.appendChild(downloadLink2);
@@ -562,8 +575,11 @@ const DropConvert = () => {
             downloadLink.href = forceUrl;
             
             if (files.length === 1) {
-              // Single file download
-              const fileName = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+              // Single file download - safely handle file name
+              const safeFileName = files[0] && files[0].name 
+                ? files[0].name 
+                : 'converted-file';
+              const fileName = safeFileName.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
               downloadLink.download = fileName;
               downloadLink.setAttribute('download', fileName); // Explicit download attribute
               console.log('Downloading single file:', fileName);
