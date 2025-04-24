@@ -98,6 +98,8 @@ const DropConvert = () => {
         
         // Set up message handler
         worker.onmessage = (event) => {
+          console.log('Worker message received:', event.data, 'jpgToAvif setting:', jpgToAvif);
+          
           const { 
             status: workerStatus, 
             progress: workerProgress, 
@@ -190,7 +192,9 @@ const DropConvert = () => {
                     let fileName = files[0].name;
                     // First remove any existing image extension
                     fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
-                    // Then add the proper extension based on conversion mode
+                    // Then add the proper extension based on conversion mode - FORCE THE RIGHT EXTENSION
+                    // When jpgToAvif is true, we're converting FROM JPG TO AVIF, so use .avif
+                    // When jpgToAvif is false, we're converting FROM AVIF TO JPG, so use .jpg
                     fileName = fileName + (jpgToAvif ? '.avif' : '.jpg');
                     
                     downloadLink.download = fileName;
