@@ -19,7 +19,24 @@ export interface SiteConfig {
 export function getSiteConfig(): SiteConfig {
   const hostname = window.location.hostname;
   
-  // Use jpgflip config when on jpgflip.com
+  // TESTING: Temporarily force JPGFlip mode in dev environment - REMOVE after testing
+  const forceTestMode = 'jpgflip'; // Use 'jpgflip' to test JPGFlip mode, 'aviflip' for AVIFlip mode, or null for normal behavior
+  
+  // Force test mode if specified and we're in development
+  if (forceTestMode === 'jpgflip' && (window.location.port === '5000' || window.location.port === '5173')) {
+    console.log('TESTING MODE: Forcing JPGFlip configuration for development');
+    return {
+      siteName: 'JPGFlip',
+      defaultConversionMode: 'jpgToAvif',
+      primaryColor: '#10b981', // Green (same as AVIFlip since you like the green)
+      secondaryColor: '#059669',
+      accentColor: '#34d399',
+      logoText: 'JPGFlip',
+      domain: 'jpgflip.com'
+    };
+  }
+  
+  // Production behavior - use jpgflip config when on jpgflip.com
   if (hostname.includes('jpgflip.com')) {
     return {
       siteName: 'JPGFlip',
