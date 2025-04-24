@@ -37,11 +37,37 @@ self.onmessage = async (event) => {
         outputMimeType, // Send mime type information
         extension: outputExtension, // Send extension info
         originalFileName: originalName, // Send original name for proper naming
+        type: 'single', // Explicitly mark as single file
+        isZipFile: false, // Explicitly mark as NOT zip file
         progress: 100
       });
       
     } else if (type === 'batch') {
-      // Batch processing with ZIP creation for multiple files (any number > 1)
+      // If we somehow got a "batch" request for a single file, process it as single instead
+      if (files.length === 1) {
+        console.log('Received batch request for single file - converting to single file mode');
+        // Re-use the single-file code path
+        const file = files[0];
+        const fileData = await readFileAsArrayBuffer(file);
+        console.log(`Processing single file in batch mode: ${file.name}, size: ${fileData.byteLength} bytes`);
+        
+        const resultBlob = new Blob([fileData], { type: outputMimeType });
+        const originalName = file.name.replace(fileExtensionRegex, '');
+        
+        self.postMessage({
+          status: 'success',
+          result: resultBlob,
+          outputMimeType,
+          extension: outputExtension,
+          originalFileName: originalName,
+          type: 'single',
+          isZipFile: false,
+          progress: 100
+        });
+        return;
+      }
+      
+      // Batch processing with ZIP creation for multiple files (actual multiple files, 2+)
       console.log(`Worker processing batch of ${files.length} files`);
       
       const zip = new JSZip();
@@ -78,7 +104,7 @@ self.onmessage = async (event) => {
         streamFiles: true
       });
       
-      console.log(`Generated ZIP blob of size: ${zipBlob.size} bytes`);
+      console.log(`Generated ZIP blob of size: ${zipBlob.size} bytes for ${files.length} files. Using conversion direction: ${jpgToAvif ? 'JPG → AVIF' : 'AVIF → JPG'}`);
       
       // Always set the correct MIME type for ZIP files
       self.postMessage({

@@ -161,8 +161,16 @@ const DropConvert = () => {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = forceUrl;
                 
-                // Handle single vs multiple files based on conversion type
-                const isSingleFile = files.length === 1 && !isZipFile;
+                // Log the type and flags for debugging
+                console.log('Download type flags:', { 
+                  filesCount: files.length, 
+                  isZipFile, 
+                  messageType,
+                  originalFileName 
+                });
+                
+                // Override zip detection for single files - force single file download when files.length === 1
+                const isSingleFile = files.length === 1;
                 
                 if (isSingleFile) {
                   // Make sure we preserve the file extension by explicitly setting it
