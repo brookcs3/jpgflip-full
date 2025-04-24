@@ -121,7 +121,12 @@ const DropConvert = () => {
             outputMimeType,
             extension,
             originalFileName,
-            type: messageType
+            type: messageType,
+            // CRITICAL: Read these properties from the worker
+            // The worker has the correct information about single vs multiple files
+            fileCount: workerFileCount,
+            isSingleFile: workerIsSingleFile,
+            isMultiFile: workerIsMultiFile
           } = event.data;
           
           if (workerStatus === 'progress') {
@@ -133,6 +138,12 @@ const DropConvert = () => {
             console.log('Worker conversion success, setting download URL:', url);
             setDownloadUrl(url);
             setStatus('success');
+            
+            // CRITICAL: Store the original file count in a local variable
+            // that will be accessible in the setTimeout scope
+            const originalFiles = [...files];
+            const originalCount = originalFiles.length;
+            console.log('Storing file count in closure for download:', originalCount);
             
             // Handle download based on number of files
             console.log('Triggering auto-download for conversion result...');
@@ -162,16 +173,53 @@ const DropConvert = () => {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = forceUrl;
                 
-                // Use the fileCount from state we stored when conversion started
-                // This ensures we don't lose the reference as files array might have changed
+                // Use our closure-captured originalCount from when the success handler ran
+                // This is more reliable than depending on React state or the files array
                 // CRITICAL: This is the safe way to determine download format
                 
-                console.log('File count in state:', fileCount);
-                console.log('Original files array length:', files.length);
+                console.log('Captured original count in closure:', originalCount);
+                console.log('Current file count in state:', fileCount);
+                console.log('Current files array length:', files.length);
                 
-                // We'll use fileCount from state for consistency
-                // If fileCount is 0 in state (somehow), we'll fall back to length check
-                const actualFileCount = fileCount > 0 ? fileCount : files.length;
+                // FINAL DECISION LOGIC:
+                // 1. Use worker's isZipFile flag as our primary indicator (most reliable)
+                // 2. Fall back to worker's file count
+                // 3. Fall back to our closure variable (less reliable but better than files.length)
+                // 4. Last resort: fall back to fileCount state
+                
+                // First check if worker is explicitly marking this as a ZIP file
+                let shouldUseZip = isZipFile === true;
+                
+                // If worker didn't specify, use worker's file count or flags
+                if (shouldUseZip === undefined) {
+                  if (workerIsMultiFile === true) {
+                    shouldUseZip = true;
+                  } else if (workerIsSingleFile === true) {
+                    shouldUseZip = false;
+                  } else if (workerFileCount && workerFileCount > 1) {
+                    shouldUseZip = true;
+                  } else if (workerFileCount === 1) {
+                    shouldUseZip = false;
+                  }
+                }
+                
+                // If still undefined, use our local tracking
+                if (shouldUseZip === undefined) {
+                  shouldUseZip = originalCount > 1;
+                }
+                
+                // For debugging
+                console.log('Download decision:', {
+                  shouldUseZip,
+                  isZipFile,
+                  workerFileCount,
+                  workerIsSingleFile,
+                  workerIsMultiFile,
+                  originalCount,
+                  currentFileCount: fileCount
+                });
+                
+                const actualFileCount = shouldUseZip ? 2 : 1; // Force correct path selection
                 
                 // FORCE single file paths for count===1 and ZIP for count>1
                 // This ensures consistent download behavior
@@ -268,10 +316,13 @@ const DropConvert = () => {
         console.log(`Sending ${processingType} processing request to worker for ${totalFiles} file(s)`);
         
         // Send data to worker for processing
+        // CRITICAL: Pass the totalFiles value to the worker as we know it's accurate at this point
         workerRef.current.postMessage({
           type: processingType,
           files,
-          jpgToAvif // Include conversion mode
+          jpgToAvif, // Include conversion mode
+          totalFiles, // Pass the actual file count to ensure worker has it
+          isSingleFile: totalFiles === 1
         });
         return; // Worker will handle the rest via onmessage
       }

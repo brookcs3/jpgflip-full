@@ -3,9 +3,18 @@ import JSZip from 'jszip';
 
 // Process files in a web worker
 self.onmessage = async (event) => {
-  const { files, type, jpgToAvif } = event.data;
+  const { files, type, jpgToAvif, totalFiles, isSingleFile } = event.data;
   
-  console.log('Worker received message:', { type, jpgToAvif, fileCount: files.length });
+  // Note: Use totalFiles passed from parent if available, otherwise fallback to files.length
+  const fileCount = totalFiles || files.length;
+  
+  console.log('Worker received message:', { 
+    type, 
+    jpgToAvif, 
+    fileCount,
+    isSingleFile,
+    filesArrayLength: files.length 
+  });
   
   try {
     // Set up the correct MIME type and extension based on conversion direction
@@ -31,6 +40,8 @@ self.onmessage = async (event) => {
       // Remove existing extension and add the new one
       const originalName = file.name.replace(fileExtensionRegex, '');
       
+      // CRITICAL: Pass back the file count so the browser knows it's a single file
+      // We need this to make correct download decisions in the browser
       self.postMessage({
         status: 'success', 
         result: resultBlob,
@@ -39,6 +50,8 @@ self.onmessage = async (event) => {
         originalFileName: originalName, // Send original name for proper naming
         type: 'single', // Explicitly mark as single file
         isZipFile: false, // Explicitly mark as NOT zip file
+        fileCount: fileCount, // Pass back original file count for verification
+        isSingleFile: isSingleFile || true, // Explicitly mark as single file task
         progress: 100
       });
       
@@ -107,11 +120,15 @@ self.onmessage = async (event) => {
       console.log(`Generated ZIP blob of size: ${zipBlob.size} bytes for ${files.length} files. Using conversion direction: ${jpgToAvif ? 'JPG → AVIF' : 'AVIF → JPG'}`);
       
       // Always set the correct MIME type for ZIP files
+      // Make sure we always set proper batch flags
       self.postMessage({
         status: 'success',
         result: zipBlob,
         isZipFile: true,
         outputMimeType: 'application/zip', // Explicit ZIP MIME type
+        fileCount: fileCount, // Pass back original count for verification
+        isSingleFile: false, // Explicitly mark as NOT single file
+        isMultiFile: true, // Explicitly mark as multi-file task
         progress: 100
       });
     }
