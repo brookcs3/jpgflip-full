@@ -28,60 +28,9 @@ self.onmessage = async (event) => {
         progress: 100
       });
       
-    } else if (type === 'batch' && files.length === 2) {
-      // For 2 files, handle them individually but as a batch
-      // Process the first file
-      const file1 = files[0];
-      const fileData1 = await readFileAsArrayBuffer(file1);
-      
-      // Report progress for first file
-      self.postMessage({
-        status: 'progress',
-        file: 1,
-        progress: 50
-      });
-      
-      // Create blob with the appropriate MIME type based on conversion direction
-      const resultBlob1 = new Blob([fileData1], { type: outputMimeType });
-      
-      // Process the second file
-      const file2 = files[1];
-      const fileData2 = await readFileAsArrayBuffer(file2);
-      
-      // Report progress for second file
-      self.postMessage({
-        status: 'progress',
-        file: 2,
-        progress: 100
-      });
-      
-      // Create blob with the appropriate MIME type based on conversion direction for second file
-      const resultBlob2 = new Blob([fileData2], { type: outputMimeType });
-      
-      // Add reference to both blobs in a custom object
-      const result = {
-        file1: {
-          blob: resultBlob1,
-          name: file1.name.replace(fileExtensionRegex, outputExtension)
-        },
-        file2: {
-          blob: resultBlob2,
-          name: file2.name.replace(fileExtensionRegex, outputExtension)
-        }
-      };
-      
-      // Post back the result with a special indicator this is two files
-      self.postMessage({
-        status: 'success',
-        result: resultBlob1, // Send first file's blob as primary result
-        secondFile: resultBlob2, // Include second file's blob
-        firstFileName: file1.name.replace(fileExtensionRegex, outputExtension),
-        secondFileName: file2.name.replace(fileExtensionRegex, outputExtension),
-        isTwoFiles: true,
-        progress: 100
-      });
     } else if (type === 'batch') {
-      // Batch processing with ZIP creation for 3+ files
+      // Batch processing with ZIP creation for multiple files (any number > 1)
+      // We now create ZIP for any batch (2+ files)
       const zip = new JSZip();
       const totalFiles = files.length;
       
