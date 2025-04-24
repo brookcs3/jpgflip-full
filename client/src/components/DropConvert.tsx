@@ -68,8 +68,9 @@ const DropConvert = () => {
       return;
     }
     
+    // Always set status to 'ready' instead of auto-processing when files are added
     setFiles(avifFiles);
-    setStatus('ready');
+    setStatus('ready'); // This ensures the user needs to click convert
     setProgress(0);
   }, [downloadUrl]);
   
@@ -250,7 +251,7 @@ const DropConvert = () => {
                     downloadLink.download = fileName;
                     downloadLink.setAttribute('download', fileName); // Explicit download attribute
                     console.log('Auto-download triggered for single file via worker:', fileName);
-                  } else if (isZipFile || files.length > 2) {
+                  } else if (isZipFile || files.length > 1) {
                     downloadLink.download = "converted_images.zip";
                     downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
                     console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
