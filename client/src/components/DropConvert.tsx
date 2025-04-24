@@ -126,21 +126,28 @@ const DropConvert = () => {
               if (workerRef.current) {
                 // Special handling for two files
                 if (isTwoFiles && secondFile) {
-                  // Download first file
+                  // Download first file - force download with octet-stream blob
+                  const forceDownloadBlob1 = new Blob([result], { type: 'application/octet-stream' });
+                  const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
+                  
                   const downloadLink1 = document.createElement('a');
-                  downloadLink1.href = url;
+                  downloadLink1.href = forceUrl1;
                   downloadLink1.download = firstFileName;
+                  downloadLink1.setAttribute('download', firstFileName); // Explicit download attribute
                   document.body.appendChild(downloadLink1);
                   downloadLink1.click();
                   document.body.removeChild(downloadLink1);
                   
                   // Small delay between downloads to prevent browser issues
                   setTimeout(() => {
-                    // Download second file
-                    const url2 = URL.createObjectURL(secondFile);
+                    // Download second file - force download with octet-stream blob
+                    const forceDownloadBlob2 = new Blob([secondFile], { type: 'application/octet-stream' });
+                    const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
+                    
                     const downloadLink2 = document.createElement('a');
-                    downloadLink2.href = url2;
+                    downloadLink2.href = forceUrl2;
                     downloadLink2.download = secondFileName;
+                    downloadLink2.setAttribute('download', secondFileName); // Explicit download attribute
                     document.body.appendChild(downloadLink2);
                     downloadLink2.click();
                     document.body.removeChild(downloadLink2);
@@ -150,14 +157,21 @@ const DropConvert = () => {
                 } 
                 // Handle single file or ZIP (3+ files)
                 else {
+                  // Force download with octet-stream MIME type to prevent browser rendering
+                  const forceDownloadBlob = new Blob([result], { type: 'application/octet-stream' });
+                  const forceUrl = URL.createObjectURL(forceDownloadBlob);
+                  
                   const downloadLink = document.createElement('a');
-                  downloadLink.href = url;
+                  downloadLink.href = forceUrl;
                   
                   if (files.length === 1) {
-                    downloadLink.download = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
-                    console.log('Auto-download triggered for single file via worker');
+                    const fileName = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+                    downloadLink.download = fileName;
+                    downloadLink.setAttribute('download', fileName); // Explicit download attribute
+                    console.log('Auto-download triggered for single file via worker:', fileName);
                   } else if (isZipFile || files.length > 2) {
                     downloadLink.download = "converted_images.zip";
+                    downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
                     console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
                   }
                   
@@ -237,17 +251,23 @@ const DropConvert = () => {
         setDownloadUrl(url);
         setStatus('success');
         
-        // Auto-download file after a short delay
+        // Auto-download file after a short delay - force download with octet-stream
         setTimeout(() => {
+          // Create new blob with octet-stream MIME type to force download
+          const forceDownloadBlob = new Blob([fileData], { type: 'application/octet-stream' });
+          const forceUrl = URL.createObjectURL(forceDownloadBlob);
+          
           const downloadLink = document.createElement('a');
-          downloadLink.href = url;
-          downloadLink.download = file.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          downloadLink.href = forceUrl;
+          const fileName = file.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          downloadLink.download = fileName;
+          downloadLink.setAttribute('download', fileName); // Explicit download attribute
           
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
           
-          console.log('Auto-download triggered for single file via main thread');
+          console.log('Auto-download triggered for single file via main thread:', fileName);
         }, 500);
       } else if (totalFiles === 2) {
         // For exactly 2 files, convert them individually
@@ -288,22 +308,34 @@ const DropConvert = () => {
         setDownloadUrl(url1);
         setStatus('success');
         
-        // Auto-download both files
+        // Auto-download both files with force download
         setTimeout(() => {
+          // Convert to octet-stream to force download of first file
+          const forceDownloadBlob1 = new Blob([fileData1], { type: 'application/octet-stream' });
+          const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
+          
           // Download first file
           const downloadLink1 = document.createElement('a');
-          downloadLink1.href = url1;
-          downloadLink1.download = file1.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          downloadLink1.href = forceUrl1;
+          const fileName1 = file1.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          downloadLink1.download = fileName1;
+          downloadLink1.setAttribute('download', fileName1); // Explicit download attribute
           document.body.appendChild(downloadLink1);
           downloadLink1.click();
           document.body.removeChild(downloadLink1);
           
           // Small delay between downloads to prevent browser issues
           setTimeout(() => {
+            // Convert to octet-stream to force download of second file
+            const forceDownloadBlob2 = new Blob([fileData2], { type: 'application/octet-stream' });
+            const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
+            
             // Download second file
             const downloadLink2 = document.createElement('a');
-            downloadLink2.href = url2;
-            downloadLink2.download = file2.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+            downloadLink2.href = forceUrl2;
+            const fileName2 = file2.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+            downloadLink2.download = fileName2;
+            downloadLink2.setAttribute('download', fileName2); // Explicit download attribute
             document.body.appendChild(downloadLink2);
             downloadLink2.click();
             document.body.removeChild(downloadLink2);
@@ -377,11 +409,17 @@ const DropConvert = () => {
         setDownloadUrl(url);
         setStatus('success');
         
-        // Auto-download ZIP file after a short delay
+        // Auto-download ZIP file after a short delay - force download
         setTimeout(() => {
+          // ZIP already has the application/zip MIME type which usually forces download,
+          // but let's still force it with application/octet-stream to be absolutely sure
+          const forceDownloadBlob = new Blob([zipBlob], { type: 'application/octet-stream' });
+          const forceUrl = URL.createObjectURL(forceDownloadBlob);
+          
           const downloadLink = document.createElement('a');
-          downloadLink.href = url;
+          downloadLink.href = forceUrl;
           downloadLink.download = "converted_images.zip";
+          downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
           
           document.body.appendChild(downloadLink);
           downloadLink.click();
@@ -405,31 +443,47 @@ const DropConvert = () => {
     }
   };
   
-  // Handle file download
+  // Handle file download - uses application/octet-stream to force download
   const handleDownload = () => {
     if (status === 'success' && downloadUrl) {
-      // Create a hidden anchor element to trigger download
-      const downloadLink = document.createElement('a');
-      downloadLink.href = downloadUrl;
-      
-      if (files.length === 1) {
-        // Single file download
-        downloadLink.download = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
-        console.log('Downloading single file:', downloadLink.download);
-      } else {
-        // ZIP download
-        downloadLink.download = "converted_images.zip";
-        console.log('Downloading ZIP with', files.length, 'files');
-      }
-      
-      // Add to document, click, and remove
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      
-      // Track analytics
-      if (window.performance && window.performance.now) {
-        console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
+      try {
+        // Get the blob from the URL
+        fetch(downloadUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            // Create a new blob with application/octet-stream MIME type to force download
+            const forceDownloadBlob = new Blob([blob], { type: 'application/octet-stream' });
+            const forceUrl = URL.createObjectURL(forceDownloadBlob);
+            
+            // Create a hidden anchor element to trigger download
+            const downloadLink = document.createElement('a');
+            downloadLink.href = forceUrl;
+            
+            if (files.length === 1) {
+              // Single file download
+              const fileName = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+              downloadLink.download = fileName;
+              downloadLink.setAttribute('download', fileName); // Explicit download attribute
+              console.log('Downloading single file:', fileName);
+            } else {
+              // ZIP download
+              downloadLink.download = "converted_images.zip";
+              downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
+              console.log('Downloading ZIP with', files.length, 'files');
+            }
+            
+            // Add to document, click, and remove
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // Track analytics
+            if (window.performance && window.performance.now) {
+              console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
+            }
+          });
+      } catch (error) {
+        console.error('Error during manual download:', error);
       }
     }
   };

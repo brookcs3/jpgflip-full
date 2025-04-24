@@ -45,10 +45,14 @@ export function getBrowserCapabilities() {
 
 /**
  * Creates an optimized URL object from a blob/file that can be used for downloads
+ * Uses application/octet-stream MIME type to force download instead of browser rendering
  */
 export function createDownloadUrl(blob: Blob, filename: string): { url: string, download: string } {
+  // Create a new blob with application/octet-stream MIME type to force download instead of browser rendering
+  const forceDownloadBlob = new Blob([blob], { type: 'application/octet-stream' });
+  
   // Create object URL for download
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(forceDownloadBlob);
   
   // Extract the file extension or default to .jpg
   const extension = filename.includes('.') 
