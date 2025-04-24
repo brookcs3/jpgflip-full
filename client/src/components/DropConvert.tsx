@@ -311,14 +311,38 @@ const DropConvert = () => {
             <div>
               <CheckCircle className="h-16 w-16 text-success-500 mx-auto mb-4" />
               <p className="text-lg text-gray-700 font-medium">{files.length} file(s) ready</p>
-              <p className="text-gray-500 text-sm mt-1">Click convert button to process</p>
+              <p className="text-gray-500 text-sm mt-1">
+                Converting from {jpgToAvif ? 'JPG to AVIF' : 'AVIF to JPG'}
+              </p>
               
-              {/* Speed hint - show which optimizations are active */}
-              <div className="mt-3 inline-flex items-center text-xs px-2 py-1 bg-primary/5 text-primary rounded">
-                <Zap className="h-3 w-3 mr-1" />
-                {capabilities.hasWebWorker 
-                  ? 'Using high-speed parallel processing' 
-                  : 'Using optimized processing'}
+              {/* Mode and speed optimization indicators */}
+              <div className="mt-3 flex flex-col items-center gap-2">
+                {/* Conversion mode indicator */}
+                <div className="inline-flex items-center text-xs px-2 py-1 bg-success-50 text-success-700 rounded">
+                  <ArrowLeftRight className="h-3 w-3 mr-1" />
+                  Mode: {jpgToAvif ? 'JPG → AVIF' : 'AVIF → JPG'}
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="ml-1 h-5 w-5 rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering file upload
+                      setJpgToAvif(!jpgToAvif);
+                    }}
+                    title="Switch conversion direction"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                {/* Speed hint - show which optimizations are active */}
+                <div className="inline-flex items-center text-xs px-2 py-1 bg-primary/5 text-primary rounded">
+                  <Zap className="h-3 w-3 mr-1" />
+                  {capabilities.hasWebWorker 
+                    ? 'Using high-speed parallel processing' 
+                    : 'Using optimized processing'}
+                </div>
               </div>
             </div>
           )}
@@ -327,12 +351,20 @@ const DropConvert = () => {
           {status === 'processing' && (
             <div>
               <RefreshCw className="h-16 w-16 text-primary mx-auto mb-4 animate-spin" />
-              <p className="text-lg text-gray-700 font-medium">Converting...</p>
+              <p className="text-lg text-gray-700 font-medium">
+                Converting to {jpgToAvif ? 'AVIF' : 'JPG'}...
+              </p>
               <div className="mt-4 relative">
                 <Progress value={progress} className="h-2.5" />
                 <p className="text-sm text-gray-500 mt-1">
                   {progress}% complete ({processingFile}/{files.length} files)
                 </p>
+              </div>
+              
+              {/* Mode indicator during conversion */}
+              <div className="mt-3 inline-flex items-center text-xs px-2 py-1 bg-primary/5 text-primary rounded">
+                <ArrowLeftRight className="h-3 w-3 mr-1" />
+                Converting: {jpgToAvif ? 'JPG → AVIF' : 'AVIF → JPG'}
               </div>
             </div>
           )}
@@ -341,8 +373,19 @@ const DropConvert = () => {
           {status === 'error' && (
             <div>
               <AlertTriangle className="h-16 w-16 text-warning-500 mx-auto mb-4" />
-              <p className="text-lg text-gray-700 font-medium">Error: {errorMessage}</p>
+              <p className="text-lg text-gray-700 font-medium">
+                Error During {jpgToAvif ? 'AVIF' : 'JPG'} Conversion
+              </p>
+              <p className="text-gray-500 text-sm mt-1">
+                {errorMessage || `Failed to convert to ${jpgToAvif ? 'AVIF' : 'JPG'} format`}
+              </p>
               <p className="text-gray-500 text-sm mt-1">Drop files again to retry</p>
+              
+              {/* Failed conversion mode indicator */}
+              <div className="mt-3 inline-flex items-center text-xs px-2 py-1 bg-warning-50 text-warning-700 rounded">
+                <ArrowLeftRight className="h-3 w-3 mr-1" />
+                Failed: {jpgToAvif ? 'JPG → AVIF' : 'AVIF → JPG'} conversion
+              </div>
             </div>
           )}
           
@@ -350,8 +393,21 @@ const DropConvert = () => {
           {status === 'success' && (
             <div>
               <CheckCircle className="h-16 w-16 text-success-500 mx-auto mb-4" />
-              <p className="text-lg text-gray-700 font-medium">Conversion complete!</p>
-              <p className="text-gray-500 text-sm mt-1">Click the download button below</p>
+              <p className="text-lg text-gray-700 font-medium">
+                {jpgToAvif ? 'AVIF' : 'JPG'} Conversion Complete!
+              </p>
+              <p className="text-gray-500 text-sm mt-1">
+                {files.length === 1 
+                  ? `Your ${jpgToAvif ? 'AVIF' : 'JPG'} file is ready to download` 
+                  : `Your ${files.length} files are ready to download in ZIP format`
+                }
+              </p>
+              
+              {/* Show conversion mode badge */}
+              <div className="mt-3 inline-flex items-center text-xs px-2 py-1 bg-success-50 text-success-700 rounded">
+                <ArrowLeftRight className="h-3 w-3 mr-1" />
+                Converted: {jpgToAvif ? 'JPG → AVIF' : 'AVIF → JPG'}
+              </div>
             </div>
           )}
         </div>
@@ -397,7 +453,7 @@ const DropConvert = () => {
               disabled
             >
               <Loader className="mr-2 h-4 w-4 animate-spin" />
-              Converting...
+              Converting to {jpgToAvif ? 'AVIF' : 'JPG'}...
             </Button>
           )}
           

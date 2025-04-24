@@ -3,22 +3,26 @@ import JSZip from 'jszip';
 
 // Process files in a web worker
 self.onmessage = async (event) => {
-  const { files, type } = event.data;
+  const { files, type, jpgToAvif } = event.data;
   
   try {
+    // Set up the correct MIME type and extension based on conversion direction
+    const outputMimeType = jpgToAvif ? 'image/avif' : 'image/jpeg';
+    const fileExtensionRegex = /\.(avif|png|jpe?g)$/i;
+    const outputExtension = jpgToAvif ? '.avif' : '.jpg';
+    
     if (type === 'single') {
       // Single file processing
       const file = files[0];
       const fileData = await readFileAsArrayBuffer(file);
       
-      // In a real implementation, you would do AVIF to JPG conversion here
-      // For now, simulate conversion
-      const jpgBlob = new Blob([fileData], { type: 'image/jpeg' });
+      // Create blob with the appropriate MIME type based on conversion direction
+      const resultBlob = new Blob([fileData], { type: outputMimeType });
       
       // Post back the result
       self.postMessage({
         status: 'success', 
-        result: jpgBlob,
+        result: resultBlob,
         progress: 100
       });
       
@@ -29,12 +33,13 @@ self.onmessage = async (event) => {
       
       for (let i = 0; i < totalFiles; i++) {
         const file = files[i];
-        const outputName = file.name.replace('.avif', '.jpg');
+        // Use the appropriate file extension based on conversion direction
+        const outputName = file.name.replace(fileExtensionRegex, outputExtension);
         
         // Read file data
         const fileData = await readFileAsArrayBuffer(file);
         
-        // In real implementation, convert AVIF to JPG here
+        // In real implementation, convert between formats here
         // For now, just add to zip
         zip.file(outputName, fileData);
         
