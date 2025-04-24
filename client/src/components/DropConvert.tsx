@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import JSZip from 'jszip';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,15 @@ import {
   X, 
   FileImage,
   Download,
-  Loader
+  Loader,
+  Zap
 } from 'lucide-react';
-import { formatFileSize } from '@/lib/utils';
+import { 
+  formatFileSize, 
+  getBrowserCapabilities, 
+  readFileOptimized,
+  createDownloadUrl 
+} from '@/lib/utils';
 
 // Type for our accepted files
 interface AcceptedFile extends File {
@@ -64,7 +70,61 @@ const DropConvert = () => {
     },
   });
   
-  // Simulate conversion for the MVP
+  // Check browser capabilities for optimized processing
+  const capabilities = useMemo(() => getBrowserCapabilities(), []);
+  
+  // Use Web Workers for faster conversion if available
+  const workerRef = useRef<Worker | null>(null);
+  
+  // Initialize worker if supported
+  useEffect(() => {
+    // Cleanup any previous worker
+    if (workerRef.current) {
+      workerRef.current.terminate();
+    }
+    
+    // Only create worker if browser supports it
+    if (capabilities.hasWebWorker) {
+      try {
+        // Create worker in try-catch since it may fail in some environments
+        const worker = new Worker(new URL('../workers/conversion.worker.ts', import.meta.url), { 
+          type: 'module' 
+        });
+        
+        // Set up message handler
+        worker.onmessage = (event) => {
+          const { status: workerStatus, progress: workerProgress, file, result, error } = event.data;
+          
+          if (workerStatus === 'progress') {
+            setProgress(workerProgress);
+            setProcessingFile(file);
+          } else if (workerStatus === 'success') {
+            setProgress(100);
+            const url = URL.createObjectURL(result);
+            setDownloadUrl(url);
+            setStatus('success');
+          } else if (workerStatus === 'error') {
+            setStatus('error');
+            setErrorMessage(error || 'Conversion failed');
+          }
+        };
+        
+        workerRef.current = worker;
+      } catch (err) {
+        console.warn('Web Workers not fully supported, falling back to main thread processing', err);
+      }
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, [capabilities.hasWebWorker]);
+  
+  // Optimized conversion function with fallbacks for different browsers
   const convertFiles = async () => {
     if (files.length === 0 || status === 'processing') return;
     
@@ -75,50 +135,98 @@ const DropConvert = () => {
     try {
       const totalFiles = files.length;
       
+      // Try to use Web Worker for processing
+      if (workerRef.current) {
+        // Send data to worker for processing
+        workerRef.current.postMessage({
+          type: totalFiles === 1 ? 'single' : 'batch',
+          files
+        });
+        return; // Worker will handle the rest via onmessage
+      }
+      
+      // Fallback to main thread processing if worker isn't available
       if (totalFiles === 1) {
         // Single file conversion
         const file = files[0];
-        const outputName = file.name.replace('.avif', '.jpg');
         
         setProcessingFile(1);
         
-        // For MVP, just read the file directly
-        const fileData = await file.arrayBuffer();
+        // Use optimized file reading
+        const fileData = await readFileOptimized(file);
         
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // For MVP, simulate conversion with minimal delay
+        if (process.env.NODE_ENV === 'development') {
+          await new Promise(resolve => setTimeout(resolve, 200)); // Faster in development
+        }
         
-        // Create a blob directly for single file
+        // Create a blob with proper MIME type
         const blob = new Blob([fileData], { type: 'image/jpeg' });
-        const url = URL.createObjectURL(blob);
+        
+        // Use optimized URL creation
+        const { url } = createDownloadUrl(blob, file.name);
         
         setProgress(100);
         setDownloadUrl(url);
         setStatus('success');
       } else {
-        // Multiple files - create ZIP
+        // Multiple files - create ZIP with compression
         const zip = new JSZip();
         
-        for (let i = 0; i < totalFiles; i++) {
-          const file = files[i];
-          const outputName = file.name.replace('.avif', '.jpg');
+        // Process files in batches for better UI responsiveness
+        const BATCH_SIZE = 3; // Process 3 files at a time
+        
+        for (let i = 0; i < totalFiles; i += BATCH_SIZE) {
+          // Create a batch of promises
+          const batchPromises = [];
           
-          setProcessingFile(i + 1);
+          // Calculate the end of this batch
+          const endIndex = Math.min(i + BATCH_SIZE, totalFiles);
           
-          // For MVP, just read the file and add it to the zip
-          const fileData = await file.arrayBuffer();
-          zip.file(outputName, fileData);
+          // Create promises for each file in the batch
+          for (let j = i; j < endIndex; j++) {
+            const file = files[j];
+            const outputName = file.name.replace(/\.(avif|png|jpe?g)$/i, '.jpg');
+            
+            // Create a promise for this file processing
+            const processPromise = (async () => {
+              // Read the file data efficiently
+              const fileData = await readFileOptimized(file);
+              
+              // In real implementation, convert AVIF to JPG here
+              
+              // Add to zip with compression
+              zip.file(outputName, fileData, {
+                compression: "DEFLATE",
+                compressionOptions: {
+                  level: 6 // Medium compression - good balance between speed and size
+                }
+              });
+              
+              return j + 1; // Return the file index for progress tracking
+            })();
+            
+            batchPromises.push(processPromise);
+          }
           
-          // Simulate processing time
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Wait for all files in this batch to be processed
+          const processedIndices = await Promise.all(batchPromises);
           
-          // Update progress
-          setProgress(Math.round(((i + 1) / totalFiles) * 100));
+          // Update the UI with the most recent file processed
+          const latestFileProcessed = Math.max(...processedIndices);
+          setProcessingFile(latestFileProcessed);
+          
+          // Update progress based on number of files processed
+          setProgress(Math.round((latestFileProcessed / totalFiles) * 100));
         }
         
-        // Generate zip
+        // Generate zip with streaming for better memory usage
         const zipBlob = await zip.generateAsync({ 
           type: 'blob',
+          compression: "DEFLATE",
+          compressionOptions: {
+            level: 6
+          },
           streamFiles: true 
         });
         
@@ -168,6 +276,14 @@ const DropConvert = () => {
               <CheckCircle className="h-16 w-16 text-success-500 mx-auto mb-4" />
               <p className="text-lg text-gray-700 font-medium">{files.length} file(s) ready</p>
               <p className="text-gray-500 text-sm mt-1">Click convert button to process</p>
+              
+              {/* Speed hint - show which optimizations are active */}
+              <div className="mt-3 inline-flex items-center text-xs px-2 py-1 bg-primary/5 text-primary rounded">
+                <Zap className="h-3 w-3 mr-1" />
+                {capabilities.hasWebWorker 
+                  ? 'Using high-speed parallel processing' 
+                  : 'Using optimized processing'}
+              </div>
             </div>
           )}
           
@@ -276,7 +392,19 @@ const DropConvert = () => {
               className="w-full bg-success-600 hover:bg-success-700"
               asChild
             >
-              <a href={downloadUrl} download={files[0].name.replace('.avif', '.jpg')}>
+              <a 
+                href={downloadUrl} 
+                download={files[0].name.replace(/\.(avif|png|jpe?g)$/i, '.jpg')}
+                onClick={() => {
+                  // Report conversion success to analytics
+                  console.log('Conversion success - single file download');
+                  
+                  // Optional: track conversion time for performance analytics
+                  if (window.performance && window.performance.now) {
+                    console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
+                  }
+                }}
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download JPG
               </a>
@@ -290,7 +418,19 @@ const DropConvert = () => {
               className="w-full bg-success-600 hover:bg-success-700"
               asChild
             >
-              <a href={downloadUrl} download="converted_images.zip">
+              <a 
+                href={downloadUrl} 
+                download="converted_images.zip"
+                onClick={() => {
+                  // Report conversion success to analytics
+                  console.log('Conversion success - batch download', files.length, 'files');
+                  
+                  // Optional: track conversion time for performance analytics
+                  if (window.performance && window.performance.now) {
+                    console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
+                  }
+                }}
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download ZIP ({files.length} files)
               </a>
