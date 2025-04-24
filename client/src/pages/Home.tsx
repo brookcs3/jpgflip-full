@@ -22,8 +22,8 @@ export default function Home() {
               </p>
             </div>
 
-            <HowItWorks />
             <DropConvert />
+            <HowItWorks />
             <TechnicalDetails />
           </div>
         </main>

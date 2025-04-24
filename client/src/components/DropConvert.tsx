@@ -73,35 +73,59 @@ const DropConvert = () => {
     setProcessingFile(0);
     
     try {
-      const zip = new JSZip();
       const totalFiles = files.length;
       
-      for (let i = 0; i < totalFiles; i++) {
-        const file = files[i];
+      if (totalFiles === 1) {
+        // Single file conversion
+        const file = files[0];
         const outputName = file.name.replace('.avif', '.jpg');
         
-        setProcessingFile(i + 1);
+        setProcessingFile(1);
         
-        // For MVP, just read the file and add it to the zip
+        // For MVP, just read the file directly
         const fileData = await file.arrayBuffer();
-        zip.file(outputName, fileData);
         
         // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Update progress
-        setProgress(Math.round(((i + 1) / totalFiles) * 100));
+        // Create a blob directly for single file
+        const blob = new Blob([fileData], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
+        
+        setProgress(100);
+        setDownloadUrl(url);
+        setStatus('success');
+      } else {
+        // Multiple files - create ZIP
+        const zip = new JSZip();
+        
+        for (let i = 0; i < totalFiles; i++) {
+          const file = files[i];
+          const outputName = file.name.replace('.avif', '.jpg');
+          
+          setProcessingFile(i + 1);
+          
+          // For MVP, just read the file and add it to the zip
+          const fileData = await file.arrayBuffer();
+          zip.file(outputName, fileData);
+          
+          // Simulate processing time
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Update progress
+          setProgress(Math.round(((i + 1) / totalFiles) * 100));
+        }
+        
+        // Generate zip
+        const zipBlob = await zip.generateAsync({ 
+          type: 'blob',
+          streamFiles: true 
+        });
+        
+        const url = URL.createObjectURL(zipBlob);
+        setDownloadUrl(url);
+        setStatus('success');
       }
-      
-      // Generate zip
-      const zipBlob = await zip.generateAsync({ 
-        type: 'blob',
-        streamFiles: true 
-      });
-      
-      const url = URL.createObjectURL(zipBlob);
-      setDownloadUrl(url);
-      setStatus('success');
     } catch (error: any) {
       console.error('Conversion error:', error);
       setStatus('error');
@@ -214,7 +238,20 @@ const DropConvert = () => {
           </Button>
         )}
         
-        {status === 'success' && downloadUrl && (
+        {status === 'success' && downloadUrl && files.length === 1 && (
+          <Button
+            variant="default"
+            className="flex-1 bg-success-600 hover:bg-success-700"
+            asChild
+          >
+            <a href={downloadUrl} download={files[0].name.replace('.avif', '.jpg')}>
+              <Download className="mr-2 h-4 w-4" />
+              Download JPG
+            </a>
+          </Button>
+        )}
+        
+        {status === 'success' && downloadUrl && files.length > 1 && (
           <Button
             variant="default"
             className="flex-1 bg-success-600 hover:bg-success-700"
@@ -222,7 +259,7 @@ const DropConvert = () => {
           >
             <a href={downloadUrl} download="converted_images.zip">
               <Download className="mr-2 h-4 w-4" />
-              Download ZIP
+              Download ZIP ({files.length} files)
             </a>
           </Button>
         )}
