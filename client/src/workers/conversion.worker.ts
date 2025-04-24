@@ -30,7 +30,7 @@ self.onmessage = async (event) => {
       
     } else if (type === 'batch') {
       // Batch processing with ZIP creation for multiple files (any number > 1)
-      // We now create ZIP for any batch (2+ files)
+      // We always create ZIP for any batch (2+ files)
       const zip = new JSZip();
       const totalFiles = files.length;
       
@@ -64,10 +64,12 @@ self.onmessage = async (event) => {
         streamFiles: true
       });
       
+      // Always set the correct MIME type for ZIP files
       self.postMessage({
         status: 'success',
         result: zipBlob,
         isZipFile: true,
+        outputMimeType: 'application/zip', // Explicit ZIP MIME type
         progress: 100
       });
     }

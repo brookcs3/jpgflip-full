@@ -116,12 +116,7 @@ const DropConvert = () => {
             file, 
             result, 
             error,
-            isTwoFiles,
-            secondFile,
-            firstFileName,
-            secondFileName,
             isZipFile,
-            fileData,
             outputMimeType,
             extension
           } = event.data;
@@ -137,147 +132,61 @@ const DropConvert = () => {
             setStatus('success');
             
             // Handle download based on number of files
-            // Force an immediate auto-download for all files
             console.log('Triggering auto-download for conversion result...');
             setTimeout(() => {
-              if (workerRef.current) {
+              if (workerRef.current && result instanceof Blob) {
                 // Log the result object to debug what's being returned
                 console.log('Download result object:', result, typeof result, Object.keys(result));
-                // Special handling for two files
-                if (isTwoFiles && secondFile) {
-                  // Check if we have a valid result blob from the worker
-                  if (!(result instanceof Blob)) {
-                    console.error('Worker did not return a valid Blob:', result);
-                    return;
-                  }
+                
+                // Use the MIME type that matches the conversion direction
+                const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
+                console.log('Using MIME type for download:', actualMimeType);
+                
+                // Use application/octet-stream MIME type to force download behavior in most browsers
+                const forceDownloadBlob = new Blob([result], { 
+                  type: 'application/octet-stream'
+                });
+                const forceUrl = URL.createObjectURL(forceDownloadBlob);
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.href = forceUrl;
+                
+                if (files.length === 1) {
+                  // Make sure we preserve the file extension by explicitly setting it
+                  // Safely access file name or provide fallback
+                  let fileName = files[0] ? files[0].name : 'converted-file';
+                  // First remove any existing image extension
+                  fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
+                  // Then add the proper extension based on what we received from the worker
+                  const fileExtension = extension || (jpgToAvif ? '.avif' : '.jpg');
+                  fileName = fileName + fileExtension;
                   
-                  // Use application/octet-stream MIME type to force download behavior in most browsers
-                  const forceDownloadBlob1 = new Blob([result], { 
-                    type: 'application/octet-stream'
-                  });
-                  const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
+                  console.log('Downloading file with name:', fileName, 'extension:', fileExtension);
                   
-                  // Make sure to have proper file extensions
-                  // Use the filename from the worker if available, otherwise from files array
-                  let file1Name = firstFileName || (files[0] ? files[0].name : 'converted-file-1');
-                  // First remove any existing image extension if needed
-                  if (!firstFileName) {
-                    file1Name = file1Name.replace(/\.(avif|png|jpe?g)$/i, '');
-                    // Then add the proper extension based on conversion mode
-                    file1Name = file1Name + (jpgToAvif ? '.avif' : '.jpg');
-                  }
-                  
-                  const downloadLink1 = document.createElement('a');
-                  downloadLink1.href = forceUrl1;
-                  downloadLink1.download = file1Name;
-                  downloadLink1.setAttribute('download', file1Name); // Explicit download attribute
-                  document.body.appendChild(downloadLink1);
-                  // Use MouseEvent for better browser compatibility
-                  const clickEvent1 = new MouseEvent('click', {
-                    view: window,
-                    bubbles: true,
-                    cancelable: true
-                  });
-                  downloadLink1.dispatchEvent(clickEvent1);
-                  document.body.removeChild(downloadLink1);
-                  
-                  // Small delay between downloads to prevent browser issues
-                  setTimeout(() => {
-                    // Verify second file blob is valid
-                    if (!(secondFile instanceof Blob)) {
-                      console.error('Worker did not return a valid second Blob:', secondFile);
-                      return;
-                    }
-                    
-                    // Download second file - use octet-stream MIME type to force download in browsers
-                    const forceDownloadBlob2 = new Blob([secondFile], { 
-                      type: 'application/octet-stream'
-                    });
-                    const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
-                    
-                    // Make sure to have proper file extensions
-                    // Use the filename from the worker if available, otherwise from files array
-                    let file2Name = secondFileName || (files[1] ? files[1].name : 'converted-file-2');
-                    // First remove any existing image extension if needed
-                    if (!secondFileName) {
-                      file2Name = file2Name.replace(/\.(avif|png|jpe?g)$/i, '');
-                      // Then add the proper extension based on conversion mode
-                      file2Name = file2Name + (jpgToAvif ? '.avif' : '.jpg');
-                    }
-                    
-                    const downloadLink2 = document.createElement('a');
-                    downloadLink2.href = forceUrl2;
-                    downloadLink2.download = file2Name;
-                    downloadLink2.setAttribute('download', file2Name); // Explicit download attribute
-                    document.body.appendChild(downloadLink2);
-                    // Use MouseEvent for better browser compatibility
-                    const clickEvent2 = new MouseEvent('click', {
-                      view: window,
-                      bubbles: true,
-                      cancelable: true
-                    });
-                    downloadLink2.dispatchEvent(clickEvent2);
-                    document.body.removeChild(downloadLink2);
-                    
-                    console.log('Auto-download triggered for 2 individual files via worker');
-                  }, 300);
-                } 
-                // Handle single file or ZIP (3+ files)
-                else {
-                  // Check if we have a valid result blob from the worker
-                  if (!(result instanceof Blob)) {
-                    console.error('Worker did not return a valid Blob:', result);
-                    return;
-                  }
-                  
-                  // Use the MIME type that matches the conversion direction
-                  const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
-                  console.log('Using MIME type for download:', actualMimeType);
-                  
-                  // Use application/octet-stream MIME type to force download behavior in most browsers
-                  const forceDownloadBlob = new Blob([result], { 
-                    type: 'application/octet-stream'
-                  });
-                  const forceUrl = URL.createObjectURL(forceDownloadBlob);
-                  
-                  const downloadLink = document.createElement('a');
-                  downloadLink.href = forceUrl;
-                  
-                  if (files.length === 1) {
-                    // Make sure we preserve the file extension by explicitly setting it
-                    // Safely access file name or provide fallback
-                    let fileName = files[0] ? files[0].name : 'converted-file';
-                    // First remove any existing image extension
-                    fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
-                    // Then add the proper extension based on what we received from the worker or fallback to our toggle
-                    const fileExtension = extension || (jpgToAvif ? '.avif' : '.jpg');
-                    fileName = fileName + fileExtension;
-                    
-                    console.log('Downloading file with name:', fileName, 'extension:', fileExtension);
-                    
-                    downloadLink.download = fileName;
-                    downloadLink.setAttribute('download', fileName); // Explicit download attribute
-                    console.log('Auto-download triggered for single file via worker:', fileName);
-                  } else if (isZipFile || files.length > 1) {
-                    downloadLink.download = "converted_images.zip";
-                    downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
-                    console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
-                  }
-                  
-                  // Force the download by using appropriate techniques for different browsers
-                  document.body.appendChild(downloadLink);
-                  
-                  // Create mouse event to trigger the click (more compatible with some browsers)
-                  const clickEvent = new MouseEvent('click', {
-                    view: window,
-                    bubbles: true,
-                    cancelable: true
-                  });
-                  downloadLink.dispatchEvent(clickEvent);
-                  
-                  // Clean up
-                  setTimeout(() => document.body.removeChild(downloadLink), 100);
+                  downloadLink.download = fileName;
+                  downloadLink.setAttribute('download', fileName); // Explicit download attribute
+                  console.log('Auto-download triggered for single file via worker:', fileName);
+                } else if (isZipFile || files.length > 1) {
+                  downloadLink.download = "converted_images.zip";
+                  downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
+                  console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
                 }
+                
+                // Force the download by using appropriate techniques for different browsers
+                document.body.appendChild(downloadLink);
+                
+                // Create mouse event to trigger the click (more compatible with some browsers)
+                const clickEvent = new MouseEvent('click', {
+                  view: window,
+                  bubbles: true,
+                  cancelable: true
+                });
+                downloadLink.dispatchEvent(clickEvent);
+                
+                // Clean up
+                setTimeout(() => document.body.removeChild(downloadLink), 100);
+              } else {
+                console.error('Worker did not return a valid Blob:', result);
               }
             }, 500);
           } else if (workerStatus === 'error') {
@@ -755,12 +664,14 @@ const DropConvert = () => {
                   <span className="text-sm text-gray-700">{file.name}</span>
                   <span className="ml-2 text-xs text-gray-500">({formatFileSize(file.size)})</span>
                 </div>
-                <button 
-                  className="text-gray-400 hover:text-gray-600"
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
                   onClick={() => removeFile(index)}
+                  className="h-8 w-8 text-gray-400 hover:text-gray-800" 
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
