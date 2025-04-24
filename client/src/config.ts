@@ -4,10 +4,13 @@
  * domain/brand is being displayed.
  */
 
+// Define conversion mode type
+export type ConversionMode = 'avifToJpg' | 'jpgToAvif';
+
 // Define site configuration types
 export interface SiteConfig {
   siteName: string;
-  defaultConversionMode: 'avifToJpg' | 'jpgToAvif';
+  defaultConversionMode: ConversionMode;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -24,7 +27,7 @@ export function getSiteConfig(): SiteConfig {
   
   // Production behavior - use jpgflip config when on jpgflip.com
   if (hostname.includes('jpgflip') || hostname.includes('jpgflip.com')) {
-    const jpgFlipConfig = {
+    const jpgFlipConfig: SiteConfig = {
       siteName: 'JPGFlip',
       defaultConversionMode: 'jpgToAvif',
       primaryColor: '#10b981', // Green (same as AVIFlip since you like the green)
@@ -38,7 +41,7 @@ export function getSiteConfig(): SiteConfig {
   }
   
   // Default to aviflip config
-  const aviFlipConfig = {
+  const aviFlipConfig: SiteConfig = {
     siteName: 'AVIFlip',
     defaultConversionMode: 'avifToJpg',
     primaryColor: '#10b981', // Green
