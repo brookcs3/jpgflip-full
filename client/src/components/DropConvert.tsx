@@ -150,9 +150,9 @@ const DropConvert = () => {
                     return;
                   }
                   
-                  // Use correct MIME type for file format recognition, but force download with download attribute
+                  // Use application/octet-stream MIME type to force download behavior in most browsers
                   const forceDownloadBlob1 = new Blob([result], { 
-                    type: jpgToAvif ? 'image/avif' : 'image/jpeg'
+                    type: 'application/octet-stream'
                   });
                   const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
                   
@@ -185,9 +185,9 @@ const DropConvert = () => {
                       return;
                     }
                     
-                    // Download second file - use correct MIME type but force download with download attribute
+                    // Download second file - use octet-stream MIME type to force download in browsers
                     const forceDownloadBlob2 = new Blob([secondFile], { 
-                      type: jpgToAvif ? 'image/avif' : 'image/jpeg'
+                      type: 'application/octet-stream'
                     });
                     const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
                     
@@ -227,9 +227,9 @@ const DropConvert = () => {
                   const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
                   console.log('Using MIME type for download:', actualMimeType);
                   
-                  // Create a new blob with the correct MIME type to force the browser to recognize it properly
+                  // Use application/octet-stream MIME type to force download behavior in most browsers
                   const forceDownloadBlob = new Blob([result], { 
-                    type: actualMimeType
+                    type: 'application/octet-stream'
                   });
                   const forceUrl = URL.createObjectURL(forceDownloadBlob);
                   
@@ -344,9 +344,9 @@ const DropConvert = () => {
         
         // Auto-download file after a short delay - force download with octet-stream
         setTimeout(() => {
-          // Use the original MIME type (image/jpeg or image/avif) so the browser can recognize the format
+          // Use application/octet-stream MIME type to force browser download behavior
           const forceDownloadBlob = new Blob([fileData], { 
-            type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+            type: 'application/octet-stream'
           });
           const forceUrl = URL.createObjectURL(forceDownloadBlob);
           
@@ -403,9 +403,9 @@ const DropConvert = () => {
         
         // Auto-download both files with force download
         setTimeout(() => {
-          // Use proper MIME type for file format but force download with download attribute
+          // Use application/octet-stream MIME type to force browser download behavior
           const forceDownloadBlob1 = new Blob([fileData1], { 
-            type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+            type: 'application/octet-stream'
           });
           const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
           
@@ -421,9 +421,9 @@ const DropConvert = () => {
           
           // Small delay between downloads to prevent browser issues
           setTimeout(() => {
-            // Use proper MIME type for the second file too
+            // Use application/octet-stream MIME type to force browser download behavior
             const forceDownloadBlob2 = new Blob([fileData2], {
-              type: jpgToAvif ? 'image/avif' : 'image/jpeg'
+              type: 'application/octet-stream'
             });
             const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
             
@@ -548,10 +548,11 @@ const DropConvert = () => {
         fetch(downloadUrl)
           .then(res => res.blob())
           .then(blob => {
-            // Preserve the original MIME type but use the download attribute to force download
-            const type = files.length === 1
-              ? jpgToAvif ? 'image/avif' : 'image/jpeg'
-              : 'application/zip';
+            // Use application/octet-stream MIME type to force browser download behavior
+            // except for ZIP files which need application/zip MIME type
+            const type = files.length > 2
+              ? 'application/zip'
+              : 'application/octet-stream';
             const forceDownloadBlob = new Blob([blob], { type });
             const forceUrl = URL.createObjectURL(forceDownloadBlob);
             
