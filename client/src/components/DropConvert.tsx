@@ -482,7 +482,8 @@ const DropConvert = () => {
           .then(blob => {
             // Use application/octet-stream MIME type to force browser download behavior
             // except for ZIP files which need application/zip MIME type
-            const type = files.length > 2
+            // Files > 1 (2+ files) should be zipped
+            const type = files.length > 1
               ? 'application/zip'
               : 'application/octet-stream';
             const forceDownloadBlob = new Blob([blob], { type });
