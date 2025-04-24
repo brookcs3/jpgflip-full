@@ -15,18 +15,40 @@ export interface SiteConfig {
   domain: string;
 }
 
-// Simplified configuration for JPGFlip-only repository
+// Determine which configuration to use based on hostname
 export function getSiteConfig(): SiteConfig {
-  // Always return JPGFlip configuration for this repository
-  return {
-    siteName: 'JPGFlip',
-    defaultConversionMode: 'jpgToAvif',
+  const hostname = window.location.hostname;
+  
+  // Log for debugging
+  console.log('Current hostname:', hostname);
+  
+  // Production behavior - use jpgflip config when on jpgflip.com
+  if (hostname.includes('jpgflip') || hostname.includes('jpgflip.com')) {
+    const jpgFlipConfig = {
+      siteName: 'JPGFlip',
+      defaultConversionMode: 'jpgToAvif',
+      primaryColor: '#10b981', // Green (same as AVIFlip since you like the green)
+      secondaryColor: '#059669',
+      accentColor: '#34d399',
+      logoText: 'JPGFlip',
+      domain: 'jpgflip.com'
+    };
+    console.log('Running in JPGFlip mode with configuration:', jpgFlipConfig);
+    return jpgFlipConfig;
+  }
+  
+  // Default to aviflip config
+  const aviFlipConfig = {
+    siteName: 'AVIFlip',
+    defaultConversionMode: 'avifToJpg',
     primaryColor: '#10b981', // Green
     secondaryColor: '#059669',
     accentColor: '#34d399',
-    logoText: 'JPGFlip',
-    domain: 'jpgflip.com'
+    logoText: 'AVIFlip',
+    domain: 'aviflip.com'
   };
+  console.log('Running in AVIFlip mode with configuration:', aviFlipConfig);
+  return aviFlipConfig;
 }
 
 // Export the current site configuration
