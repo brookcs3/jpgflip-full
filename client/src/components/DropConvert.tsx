@@ -98,7 +98,18 @@ const DropConvert = () => {
         
         // Set up message handler
         worker.onmessage = (event) => {
-          const { status: workerStatus, progress: workerProgress, file, result, error } = event.data;
+          const { 
+            status: workerStatus, 
+            progress: workerProgress, 
+            file, 
+            result, 
+            error,
+            isTwoFiles,
+            secondFile,
+            firstFileName,
+            secondFileName,
+            isZipFile
+          } = event.data;
           
           if (workerStatus === 'progress') {
             setProgress(workerProgress);
@@ -110,23 +121,50 @@ const DropConvert = () => {
             setDownloadUrl(url);
             setStatus('success');
             
-            // Trigger download automatically after a short delay
+            // Handle download based on number of files
             setTimeout(() => {
               if (workerRef.current) {
-                const downloadLink = document.createElement('a');
-                downloadLink.href = url;
-                
-                if (files.length === 1) {
-                  downloadLink.download = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
-                } else {
-                  downloadLink.download = "converted_images.zip";
+                // Special handling for two files
+                if (isTwoFiles && secondFile) {
+                  // Download first file
+                  const downloadLink1 = document.createElement('a');
+                  downloadLink1.href = url;
+                  downloadLink1.download = firstFileName;
+                  document.body.appendChild(downloadLink1);
+                  downloadLink1.click();
+                  document.body.removeChild(downloadLink1);
+                  
+                  // Small delay between downloads to prevent browser issues
+                  setTimeout(() => {
+                    // Download second file
+                    const url2 = URL.createObjectURL(secondFile);
+                    const downloadLink2 = document.createElement('a');
+                    downloadLink2.href = url2;
+                    downloadLink2.download = secondFileName;
+                    document.body.appendChild(downloadLink2);
+                    downloadLink2.click();
+                    document.body.removeChild(downloadLink2);
+                    
+                    console.log('Auto-download triggered for 2 individual files via worker');
+                  }, 300);
+                } 
+                // Handle single file or ZIP (3+ files)
+                else {
+                  const downloadLink = document.createElement('a');
+                  downloadLink.href = url;
+                  
+                  if (files.length === 1) {
+                    downloadLink.download = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+                    console.log('Auto-download triggered for single file via worker');
+                  } else if (isZipFile || files.length > 2) {
+                    downloadLink.download = "converted_images.zip";
+                    console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
+                  }
+                  
+                  document.body.appendChild(downloadLink);
+                  downloadLink.click();
+                  document.body.removeChild(downloadLink);
                 }
-                
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                
-                console.log('Auto-download triggered for newly converted file');
               }
             }, 500);
           } else if (workerStatus === 'error') {
@@ -210,6 +248,68 @@ const DropConvert = () => {
           document.body.removeChild(downloadLink);
           
           console.log('Auto-download triggered for single file via main thread');
+        }, 500);
+      } else if (totalFiles === 2) {
+        // For exactly 2 files, convert them individually
+        setProgress(0);
+        
+        for (let i = 0; i < 2; i++) {
+          const file = files[i];
+          setProcessingFile(i + 1);
+          
+          // Read file
+          const fileData = await readFileOptimized(file);
+          
+          // Update progress
+          setProgress(Math.round(((i + 1) / 2) * 100));
+        }
+        
+        // Create separate blobs for each file
+        const file1 = files[0];
+        const file2 = files[1];
+        
+        const fileData1 = await readFileOptimized(file1);
+        const fileData2 = await readFileOptimized(file2);
+        
+        // Create blobs
+        const blob1 = new Blob([fileData1], { 
+          type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+        });
+        
+        const blob2 = new Blob([fileData2], { 
+          type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+        });
+        
+        // Create URLs
+        const url1 = URL.createObjectURL(blob1);
+        const url2 = URL.createObjectURL(blob2);
+        
+        // Set first URL as the download URL
+        setDownloadUrl(url1);
+        setStatus('success');
+        
+        // Auto-download both files
+        setTimeout(() => {
+          // Download first file
+          const downloadLink1 = document.createElement('a');
+          downloadLink1.href = url1;
+          downloadLink1.download = file1.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          document.body.appendChild(downloadLink1);
+          downloadLink1.click();
+          document.body.removeChild(downloadLink1);
+          
+          // Small delay between downloads to prevent browser issues
+          setTimeout(() => {
+            // Download second file
+            const downloadLink2 = document.createElement('a');
+            downloadLink2.href = url2;
+            downloadLink2.download = file2.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+            document.body.appendChild(downloadLink2);
+            downloadLink2.click();
+            document.body.removeChild(downloadLink2);
+            
+            console.log('Auto-download triggered for 2 individual files');
+          }, 300);
         }, 500);
       } else {
         // Multiple files - create ZIP with compression
