@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import JSZip from 'jszip';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { 
   Cloud, 
   CheckCircle, 
@@ -12,7 +13,8 @@ import {
   FileImage,
   Download,
   Loader,
-  Zap
+  Zap,
+  ArrowLeftRight
 } from 'lucide-react';
 import { 
   formatFileSize, 
@@ -34,6 +36,9 @@ const DropConvert = () => {
   const [progress, setProgress] = useState(0);
   const [processingFile, setProcessingFile] = useState<number>(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  
+  // Mode selection: false = AVIF to JPG, true = JPG to AVIF
+  const [jpgToAvif, setJpgToAvif] = useState(false);
   
   // Handle file drop
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -140,7 +145,8 @@ const DropConvert = () => {
         // Send data to worker for processing
         workerRef.current.postMessage({
           type: totalFiles === 1 ? 'single' : 'batch',
-          files
+          files,
+          jpgToAvif // Include conversion mode
         });
         return; // Worker will handle the rest via onmessage
       }
@@ -160,8 +166,10 @@ const DropConvert = () => {
           await new Promise(resolve => setTimeout(resolve, 200)); // Faster in development
         }
         
-        // Create a blob with proper MIME type
-        const blob = new Blob([fileData], { type: 'image/jpeg' });
+        // Create a blob with proper MIME type based on conversion mode
+        const blob = new Blob([fileData], { 
+          type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+        });
         
         // Use optimized URL creation
         const { url } = createDownloadUrl(blob, file.name);
@@ -186,7 +194,8 @@ const DropConvert = () => {
           // Create promises for each file in the batch
           for (let j = i; j < endIndex; j++) {
             const file = files[j];
-            const outputName = file.name.replace(/\.(avif|png|jpe?g)$/i, '.jpg');
+            const extension = jpgToAvif ? '.avif' : '.jpg';
+            const outputName = file.name.replace(/\.(avif|png|jpe?g)$/i, extension);
             
             // Create a promise for this file processing
             const processPromise = (async () => {
@@ -265,8 +274,35 @@ const DropConvert = () => {
           {status === 'idle' && (
             <div>
               <Cloud className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-700 font-medium">Drop AVIF files here</p>
-              <p className="text-gray-500 text-sm mt-1">Convert AVIF images to JPG format</p>
+              <p className="text-lg text-gray-700 font-medium">
+                Drop {jpgToAvif ? 'JPG' : 'AVIF'} files here
+              </p>
+              <p className="text-gray-500 text-sm mt-1">
+                Convert {jpgToAvif ? 'JPG images to AVIF format' : 'AVIF images to JPG format'}
+              </p>
+              
+              {/* Conversion Mode Toggle */}
+              <div className="mt-4 flex items-center justify-center space-x-2">
+                <span className="text-xs font-medium text-gray-500">AVIF → JPG</span>
+                <Switch 
+                  checked={jpgToAvif} 
+                  onCheckedChange={setJpgToAvif} 
+                  className="data-[state=checked]:bg-primary" 
+                />
+                <span className="text-xs font-medium text-gray-500">JPG → AVIF</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="ml-1 h-6 w-6 rounded-full"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent triggering file upload
+                    setJpgToAvif(!jpgToAvif);
+                  }}
+                  title="Switch conversion direction"
+                >
+                  <ArrowLeftRight className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           )}
           
@@ -342,7 +378,14 @@ const DropConvert = () => {
               disabled={!isReady || files.length === 0}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-              {files.length === 1 ? 'Convert to JPG' : `Convert ${files.length} files to JPG`}
+              {files.length === 1 
+                ? jpgToAvif 
+                  ? 'Convert to AVIF' 
+                  : 'Convert to JPG'
+                : jpgToAvif 
+                  ? `Convert ${files.length} files to AVIF` 
+                  : `Convert ${files.length} files to JPG`
+              }
             </Button>
           )}
           
@@ -381,7 +424,12 @@ const DropConvert = () => {
               disabled={true}
             >
               <Download className="mr-2 h-4 w-4" />
-              {files.length === 0 ? 'Download Files' : files.length === 1 ? 'Download JPG' : 'Download ZIP'}
+              {files.length === 0 
+                ? 'Download Files' 
+                : files.length === 1 
+                  ? jpgToAvif ? 'Download AVIF' : 'Download JPG' 
+                  : 'Download ZIP'
+              }
             </Button>
           )}
           
@@ -394,7 +442,7 @@ const DropConvert = () => {
             >
               <a 
                 href={downloadUrl} 
-                download={files[0].name.replace(/\.(avif|png|jpe?g)$/i, '.jpg')}
+                download={files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg')}
                 onClick={() => {
                   // Report conversion success to analytics
                   console.log('Conversion success - single file download');
@@ -406,7 +454,7 @@ const DropConvert = () => {
                 }}
               >
                 <Download className="mr-2 h-4 w-4" />
-                Download JPG
+                Download {jpgToAvif ? 'AVIF' : 'JPG'}
               </a>
             </Button>
           )}
