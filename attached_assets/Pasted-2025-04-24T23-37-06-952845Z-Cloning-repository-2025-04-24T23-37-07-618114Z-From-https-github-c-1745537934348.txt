@@ -1,0 +1,54 @@
+2025-04-24T23:37:06.952845Z	Cloning repository...
+2025-04-24T23:37:07.618114Z	From https://github.com/brookcs3/aviflip
+2025-04-24T23:37:07.618605Z	 * branch            4f98becf4f36f4504d694f725884c0abd0f951ed -> FETCH_HEAD
+2025-04-24T23:37:07.618734Z	
+2025-04-24T23:37:07.650573Z	HEAD is now at 4f98bec Update App.tsx
+2025-04-24T23:37:07.651029Z	
+2025-04-24T23:37:07.729452Z	
+2025-04-24T23:37:07.729916Z	Using v2 root directory strategy
+2025-04-24T23:37:07.755548Z	Success: Finished cloning repository files
+2025-04-24T23:37:09.463762Z	Checking for configuration in a Wrangler configuration file (BETA)
+2025-04-24T23:37:09.464377Z	
+2025-04-24T23:37:10.572126Z	No wrangler.toml file found. Continuing.
+2025-04-24T23:37:10.637462Z	Detected the following tools from environment: npm@9.6.7, nodejs@18.17.1
+2025-04-24T23:37:10.638295Z	Installing project dependencies: npm clean-install --progress=false
+2025-04-24T23:37:11.993141Z	npm WARN EBADENGINE Unsupported engine {
+2025-04-24T23:37:11.993543Z	npm WARN EBADENGINE   package: 'connect-pg-simple@10.0.0',
+2025-04-24T23:37:11.994112Z	npm WARN EBADENGINE   required: { node: '^18.18.0 || ^20.9.0 || >=22.0.0' },
+2025-04-24T23:37:11.994509Z	npm WARN EBADENGINE   current: { node: 'v18.17.1', npm: '9.6.7' }
+2025-04-24T23:37:11.994908Z	npm WARN EBADENGINE }
+2025-04-24T23:37:15.342187Z	npm WARN deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-04-24T23:37:15.46151Z	npm WARN deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-04-24T23:37:21.547574Z	
+2025-04-24T23:37:21.54786Z	added 500 packages, and audited 501 packages in 10s
+2025-04-24T23:37:21.548154Z	
+2025-04-24T23:37:21.548335Z	64 packages are looking for funding
+2025-04-24T23:37:21.548471Z	  run `npm fund` for details
+2025-04-24T23:37:21.577993Z	
+2025-04-24T23:37:21.57834Z	7 moderate severity vulnerabilities
+2025-04-24T23:37:21.578483Z	
+2025-04-24T23:37:21.578588Z	To address issues that do not require attention, run:
+2025-04-24T23:37:21.578701Z	  npm audit fix
+2025-04-24T23:37:21.578794Z	
+2025-04-24T23:37:21.578889Z	To address all issues (including breaking changes), run:
+2025-04-24T23:37:21.579034Z	  npm audit fix --force
+2025-04-24T23:37:21.579142Z	
+2025-04-24T23:37:21.579245Z	Run `npm audit` for details.
+2025-04-24T23:37:21.599626Z	Executing user command: npm run build
+2025-04-24T23:37:22.147542Z	
+2025-04-24T23:37:22.147885Z	> rest-express@1.0.0 build
+2025-04-24T23:37:22.148077Z	> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-04-24T23:37:22.14823Z	
+2025-04-24T23:37:22.397936Z	[36mvite v5.4.14 [32mbuilding for production...[36m[39m
+2025-04-24T23:37:22.458875Z	transforming...
+2025-04-24T23:37:22.785997Z	Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+2025-04-24T23:37:22.786318Z	  npx update-browserslist-db@latest
+2025-04-24T23:37:22.786475Z	  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-04-24T23:37:23.739881Z	[32m✓[39m 35 modules transformed.
+2025-04-24T23:37:23.740944Z	[31mx[39m Build failed in 1.32s
+2025-04-24T23:37:23.741317Z	[31merror during build:
+2025-04-24T23:37:23.741508Z	[31m[vite:load-fallback] Could not load /opt/buildhome/repo/client/src/components/DebugInfo (imported by client/src/App.tsx): ENOENT: no such file or directory, open '/opt/buildhome/repo/client/src/components/DebugInfo'[31m
+2025-04-24T23:37:23.741687Z	Error: Could not load /opt/buildhome/repo/client/src/components/DebugInfo (imported by client/src/App.tsx): ENOENT: no such file or directory, open '/opt/buildhome/repo/client/src/components/DebugInfo'[39m
+2025-04-24T23:37:23.762357Z	Failed: Error while executing user command. Exited with error code: 1
+2025-04-24T23:37:23.772133Z	Failed: build command exited with code: 1
+2025-04-24T23:37:24.892279Z	Failed: error occurred while running build command
