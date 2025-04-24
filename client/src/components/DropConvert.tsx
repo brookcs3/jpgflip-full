@@ -133,8 +133,8 @@ const DropConvert = () => {
           {status === 'idle' && (
             <div>
               <Cloud className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-700 font-medium">Drop AVIF files here</p>
-              <p className="text-gray-500 text-sm mt-1">or click to browse</p>
+              <p className="text-lg text-gray-700 font-medium">Drop image files here</p>
+              <p className="text-gray-500 text-sm mt-1">Supports AVIF, PNG, JPG formats</p>
             </div>
           )}
           
