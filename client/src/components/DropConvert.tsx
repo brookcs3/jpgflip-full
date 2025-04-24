@@ -40,6 +40,13 @@ const DropConvert = () => {
   // Mode selection: false = AVIF to JPG, true = JPG to AVIF
   const [jpgToAvif, setJpgToAvif] = useState(false);
   
+  // Update the page title when conversion mode changes
+  useEffect(() => {
+    document.title = jpgToAvif 
+      ? "AVIFlip - Convert JPG to AVIF in your browser"
+      : "AVIFlip - Convert AVIF to JPG in your browser";
+  }, [jpgToAvif]);
+  
   // Handle file drop
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Reset state if we had a download before
@@ -137,6 +144,12 @@ const DropConvert = () => {
                 console.log('Download result object:', result, typeof result, Object.keys(result));
                 // Special handling for two files
                 if (isTwoFiles && secondFile) {
+                  // Check if we have a valid result blob from the worker
+                  if (!(result instanceof Blob)) {
+                    console.error('Worker did not return a valid Blob:', result);
+                    return;
+                  }
+                  
                   // Use correct MIME type for file format recognition, but force download with download attribute
                   const forceDownloadBlob1 = new Blob([result], { 
                     type: jpgToAvif ? 'image/avif' : 'image/jpeg'
@@ -166,6 +179,12 @@ const DropConvert = () => {
                   
                   // Small delay between downloads to prevent browser issues
                   setTimeout(() => {
+                    // Verify second file blob is valid
+                    if (!(secondFile instanceof Blob)) {
+                      console.error('Worker did not return a valid second Blob:', secondFile);
+                      return;
+                    }
+                    
                     // Download second file - use correct MIME type but force download with download attribute
                     const forceDownloadBlob2 = new Blob([secondFile], { 
                       type: jpgToAvif ? 'image/avif' : 'image/jpeg'
@@ -198,17 +217,18 @@ const DropConvert = () => {
                 } 
                 // Handle single file or ZIP (3+ files)
                 else {
-                  // Use the file data and MIME type received from the worker
-                  // Make sure we have the fileData from the worker
-                  const actualFileData = fileData || new Uint8Array();
-                  console.log('Using file data for download:', actualFileData);
+                  // Check if we have a valid result blob from the worker
+                  if (!(result instanceof Blob)) {
+                    console.error('Worker did not return a valid Blob:', result);
+                    return;
+                  }
                   
                   // Use the MIME type that matches the conversion direction
                   const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
                   console.log('Using MIME type for download:', actualMimeType);
                   
-                  // Create the download blob
-                  const forceDownloadBlob = new Blob([actualFileData], { 
+                  // Create a new blob with the correct MIME type to force the browser to recognize it properly
+                  const forceDownloadBlob = new Blob([result], { 
                     type: actualMimeType
                   });
                   const forceUrl = URL.createObjectURL(forceDownloadBlob);
