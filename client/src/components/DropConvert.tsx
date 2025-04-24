@@ -169,10 +169,19 @@ const DropConvert = () => {
                   originalFileName 
                 });
                 
-                // Override zip detection for single files - force single file download when files.length === 1
+                // Force ZIP download ONLY for multiple files (2+)
+                // Force single file download for exactly 1 file 
                 const isSingleFile = files.length === 1;
+                const forceZipDownload = files.length > 1;
                 
-                if (isSingleFile) {
+                console.log('Download decision:', {
+                  isSingleFile,
+                  forceZipDownload,
+                  fileCount: files.length
+                });
+                
+                // For single files, always use direct download regardless of isZipFile flag
+                if (isSingleFile && !forceZipDownload) {
                   // Make sure we preserve the file extension by explicitly setting it
                   // Use the originalFileName from the worker if available, otherwise generate it from the file
                   let baseFileName = originalFileName || 
@@ -245,11 +254,23 @@ const DropConvert = () => {
     try {
       const totalFiles = files.length;
       
+      console.log('Starting conversion with settings:', {
+        fileCount: totalFiles,
+        isSingleFile: totalFiles === 1,
+        conversionMode: jpgToAvif ? 'JPG to AVIF' : 'AVIF to JPG'
+      });
+      
       // Try to use Web Worker for processing
       if (workerRef.current) {
+        // Always use correct type based on file count 
+        // Single file = direct download, multiple files = ZIP
+        const processingType = totalFiles === 1 ? 'single' : 'batch';
+        
+        console.log(`Sending ${processingType} processing request to worker for ${totalFiles} file(s)`);
+        
         // Send data to worker for processing
         workerRef.current.postMessage({
-          type: totalFiles === 1 ? 'single' : 'batch',
+          type: processingType,
           files,
           jpgToAvif // Include conversion mode
         });
