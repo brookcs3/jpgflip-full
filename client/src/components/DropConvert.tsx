@@ -157,8 +157,8 @@ const DropConvert = () => {
           {status === 'idle' && (
             <div>
               <Cloud className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-700 font-medium">Drop image files here</p>
-              <p className="text-gray-500 text-sm mt-1">Supports AVIF, PNG, JPG formats</p>
+              <p className="text-lg text-gray-700 font-medium">Drop AVIF files here</p>
+              <p className="text-gray-500 text-sm mt-1">Convert AVIF images to JPG format</p>
             </div>
           )}
           
@@ -215,54 +215,88 @@ const DropConvert = () => {
       
       {/* Action Buttons */}
       <div className="px-6 py-4 bg-gray-50 flex flex-col sm:flex-row gap-3">
-        {status !== 'processing' && status !== 'success' && (
-          <Button 
-            variant="default" 
-            className="flex-1" 
-            onClick={convertFiles} 
-            disabled={!isReady || files.length === 0}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Convert to JPG
-          </Button>
-        )}
+        {/* Left side - Convert button */}
+        <div className="flex-1">
+          {/* Always show the conversion button except when processing or success */}
+          {status !== 'processing' && status !== 'success' && (
+            <Button 
+              variant="default" 
+              className="w-full" 
+              onClick={convertFiles} 
+              disabled={!isReady || files.length === 0}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {files.length === 1 ? 'Convert to JPG' : `Convert ${files.length} files to JPG`}
+            </Button>
+          )}
+          
+          {/* Processing state */}
+          {status === 'processing' && (
+            <Button 
+              variant="default" 
+              className="w-full opacity-70" 
+              disabled
+            >
+              <Loader className="mr-2 h-4 w-4 animate-spin" />
+              Converting...
+            </Button>
+          )}
+          
+          {/* After success, show "Convert more" button */}
+          {status === 'success' && (
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => setStatus('idle')}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Convert More Files
+            </Button>
+          )}
+        </div>
         
-        {status === 'processing' && (
-          <Button 
-            variant="default" 
-            className="flex-1 opacity-70" 
-            disabled
-          >
-            <Loader className="mr-2 h-4 w-4 animate-spin" />
-            Converting...
-          </Button>
-        )}
-        
-        {status === 'success' && downloadUrl && files.length === 1 && (
-          <Button
-            variant="default"
-            className="flex-1 bg-success-600 hover:bg-success-700"
-            asChild
-          >
-            <a href={downloadUrl} download={files[0].name.replace('.avif', '.jpg')}>
+        {/* Right side - Download button */}
+        <div className="flex-1">
+          {/* Before conversion - disabled download button */}
+          {status !== 'success' && (
+            <Button
+              variant="default"
+              className="w-full"
+              disabled={true}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Download JPG
-            </a>
-          </Button>
-        )}
-        
-        {status === 'success' && downloadUrl && files.length > 1 && (
-          <Button
-            variant="default"
-            className="flex-1 bg-success-600 hover:bg-success-700"
-            asChild
-          >
-            <a href={downloadUrl} download="converted_images.zip">
-              <Download className="mr-2 h-4 w-4" />
-              Download ZIP ({files.length} files)
-            </a>
-          </Button>
-        )}
+              {files.length === 0 ? 'Download Files' : files.length === 1 ? 'Download JPG' : 'Download ZIP'}
+            </Button>
+          )}
+          
+          {/* Success state - single file */}
+          {status === 'success' && downloadUrl && files.length === 1 && (
+            <Button
+              variant="default"
+              className="w-full bg-success-600 hover:bg-success-700"
+              asChild
+            >
+              <a href={downloadUrl} download={files[0].name.replace('.avif', '.jpg')}>
+                <Download className="mr-2 h-4 w-4" />
+                Download JPG
+              </a>
+            </Button>
+          )}
+          
+          {/* Success state - multiple files */}
+          {status === 'success' && downloadUrl && files.length > 1 && (
+            <Button
+              variant="default"
+              className="w-full bg-success-600 hover:bg-success-700"
+              asChild
+            >
+              <a href={downloadUrl} download="converted_images.zip">
+                <Download className="mr-2 h-4 w-4" />
+                Download ZIP ({files.length} files)
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
       
       {/* File List */}
