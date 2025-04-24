@@ -98,7 +98,9 @@ const DropConvert = () => {
         
         // Set up message handler
         worker.onmessage = (event) => {
-          console.log('Worker message received:', event.data, 'jpgToAvif setting:', jpgToAvif);
+          // Get current jpgToAvif state for debugging
+          const currentJpgToAvifState = jpgToAvif;
+          console.log('Worker message received:', event.data, 'jpgToAvif setting:', currentJpgToAvifState);
           
           const { 
             status: workerStatus, 
@@ -146,7 +148,13 @@ const DropConvert = () => {
                   downloadLink1.download = file1Name;
                   downloadLink1.setAttribute('download', file1Name); // Explicit download attribute
                   document.body.appendChild(downloadLink1);
-                  downloadLink1.click();
+                  // Use MouseEvent for better browser compatibility
+                  const clickEvent1 = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                  });
+                  downloadLink1.dispatchEvent(clickEvent1);
                   document.body.removeChild(downloadLink1);
                   
                   // Small delay between downloads to prevent browser issues
@@ -169,7 +177,13 @@ const DropConvert = () => {
                     downloadLink2.download = file2Name;
                     downloadLink2.setAttribute('download', file2Name); // Explicit download attribute
                     document.body.appendChild(downloadLink2);
-                    downloadLink2.click();
+                    // Use MouseEvent for better browser compatibility
+                    const clickEvent2 = new MouseEvent('click', {
+                      view: window,
+                      bubbles: true,
+                      cancelable: true
+                    });
+                    downloadLink2.dispatchEvent(clickEvent2);
                     document.body.removeChild(downloadLink2);
                     
                     console.log('Auto-download triggered for 2 individual files via worker');
@@ -206,9 +220,19 @@ const DropConvert = () => {
                     console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
                   }
                   
+                  // Force the download by using appropriate techniques for different browsers
                   document.body.appendChild(downloadLink);
-                  downloadLink.click();
-                  document.body.removeChild(downloadLink);
+                  
+                  // Create mouse event to trigger the click (more compatible with some browsers)
+                  const clickEvent = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                  });
+                  downloadLink.dispatchEvent(clickEvent);
+                  
+                  // Clean up
+                  setTimeout(() => document.body.removeChild(downloadLink), 100);
                 }
               }
             }, 500);
@@ -231,7 +255,7 @@ const DropConvert = () => {
         workerRef.current = null;
       }
     };
-  }, [capabilities.hasWebWorker]);
+  }, [capabilities.hasWebWorker, jpgToAvif]); // Add jpgToAvif to the dependency array so the worker updates when it changes
   
   // Optimized conversion function with fallbacks for different browsers
   const convertFiles = async () => {

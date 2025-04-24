@@ -45,24 +45,30 @@ export function getBrowserCapabilities() {
 
 /**
  * Creates an optimized URL object from a blob/file that can be used for downloads
- * Uses application/octet-stream MIME type to force download instead of browser rendering
+ * Preserves the original MIME type but creates a download URL
  */
 export function createDownloadUrl(blob: Blob, filename: string): { url: string, download: string } {
-  // Create a new blob with application/octet-stream MIME type to force download instead of browser rendering
-  const forceDownloadBlob = new Blob([blob], { type: 'application/octet-stream' });
+  // Preserve the original MIME type but create a URL for download
+  const url = URL.createObjectURL(blob);
   
-  // Create object URL for download
-  const url = URL.createObjectURL(forceDownloadBlob);
+  // Extract the filename base without extension
+  const filenameBase = filename.includes('.')
+    ? filename.substring(0, filename.lastIndexOf('.'))
+    : filename;
   
-  // Extract the file extension or default to .jpg
-  const extension = filename.includes('.') 
-    ? filename.split('.').pop()?.toLowerCase() 
-    : 'jpg';
-    
-  // Ensure the download name has the correct extension
-  const download = filename.replace(/\.[^/.]+$/, '') + '.' + 
-    (extension === 'avif' ? 'jpg' : extension);
-    
+  // Determine the proper extension based on the blob's MIME type
+  let extension = '.jpg'; // Default
+  if (blob.type === 'image/avif') {
+    extension = '.avif';
+  } else if (blob.type === 'image/jpeg' || blob.type === 'image/jpg') {
+    extension = '.jpg';
+  } else if (blob.type === 'image/png') {
+    extension = '.png';
+  }
+  
+  // Create the download filename with proper extension
+  const download = filenameBase + extension;
+  
   return { url, download };
 }
 
