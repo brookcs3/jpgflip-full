@@ -36,6 +36,7 @@ const DropConvert = () => {
   const [progress, setProgress] = useState(0);
   const [processingFile, setProcessingFile] = useState<number>(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [fileCount, setFileCount] = useState<number>(0); // Store file count for later reference
   
   // Mode selection: false = AVIF to JPG, true = JPG to AVIF
   const [jpgToAvif, setJpgToAvif] = useState(false);
@@ -161,13 +162,20 @@ const DropConvert = () => {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = forceUrl;
                 
-                // In all cases, make the decision based on the original files.length
-                // Not the worker response - this ensures consistent behavior
-                const fileCount = files.length;
+                // Use the fileCount from state we stored when conversion started
+                // This ensures we don't lose the reference as files array might have changed
+                // CRITICAL: This is the safe way to determine download format
                 
-                console.log('Making download decision based on original file count:', fileCount);
+                console.log('File count in state:', fileCount);
+                console.log('Original files array length:', files.length);
                 
-                if (fileCount === 1) {
+                // We'll use fileCount from state for consistency
+                // If fileCount is 0 in state (somehow), we'll fall back to length check
+                const actualFileCount = fileCount > 0 ? fileCount : files.length;
+                
+                // FORCE single file paths for count===1 and ZIP for count>1
+                // This ensures consistent download behavior
+                if (actualFileCount === 1) {
                   // SINGLE FILE - always direct download with proper extension
                   // Make sure we preserve the file extension by explicitly setting it
                   // Use the originalFileName from the worker if available, otherwise generate it from the file
@@ -234,12 +242,16 @@ const DropConvert = () => {
   const convertFiles = async () => {
     if (files.length === 0 || status === 'processing') return;
     
+    // IMPORTANT: Save the file count immediately when we start conversion
+    // This ensures we maintain the correct count throughout the entire process
+    const totalFiles = files.length;
+    setFileCount(totalFiles);
+    
     setStatus('processing');
     setProgress(0);
     setProcessingFile(0);
     
     try {
-      const totalFiles = files.length;
       
       console.log('Starting conversion with settings:', {
         fileCount: totalFiles,
