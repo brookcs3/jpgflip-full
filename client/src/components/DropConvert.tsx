@@ -198,6 +198,19 @@ const DropConvert = () => {
         setProgress(100);
         setDownloadUrl(url);
         setStatus('success');
+        
+        // Auto-download file after a short delay
+        setTimeout(() => {
+          const downloadLink = document.createElement('a');
+          downloadLink.href = url;
+          downloadLink.download = file.name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+          
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          console.log('Auto-download triggered for single file via main thread');
+        }, 500);
       } else {
         // Multiple files - create ZIP with compression
         const zip = new JSZip();
@@ -263,6 +276,19 @@ const DropConvert = () => {
         const url = URL.createObjectURL(zipBlob);
         setDownloadUrl(url);
         setStatus('success');
+        
+        // Auto-download ZIP file after a short delay
+        setTimeout(() => {
+          const downloadLink = document.createElement('a');
+          downloadLink.href = url;
+          downloadLink.download = "converted_images.zip";
+          
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          console.log('Auto-download triggered for ZIP with', files.length, 'files');
+        }, 500);
       }
     } catch (error: any) {
       console.error('Conversion error:', error);
@@ -472,9 +498,9 @@ const DropConvert = () => {
       </div>
       
       {/* Action Buttons */}
-      <div className="px-6 py-4 bg-gray-50 flex flex-col sm:flex-row gap-3">
-        {/* Left side - Convert button */}
-        <div className="flex-1">
+      <div className="px-6 py-4 bg-gray-50">
+        {/* Conversion Button - Full Width */}
+        <div className="w-full">
           {/* Always show the conversion button except when processing or success */}
           {status !== 'processing' && status !== 'success' && (
             <Button 
@@ -509,39 +535,20 @@ const DropConvert = () => {
           
           {/* After success, show "Convert more" button */}
           {status === 'success' && (
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => setStatus('idle')}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Convert More Files
-            </Button>
+            <div className="relative w-full">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => setStatus('idle')}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Convert More Files
+              </Button>
+              <div className="absolute top-full left-0 right-0 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded text-center">
+                Your file{files.length > 1 ? 's are' : ' is'} downloading automatically
+              </div>
+            </div>
           )}
-        </div>
-        
-        {/* Right side - Download button */}
-        <div className="flex-1">
-          {/* Download button - changes state based on conversion status */}
-          <Button
-            variant={status === 'success' ? "default" : "outline"}
-            className={`w-full ${status === 'success' ? 'bg-success-600 hover:bg-success-700' : ''}`}
-            disabled={status !== 'success'}
-            onClick={handleDownload}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {status !== 'success' 
-              ? (files.length === 0 
-                  ? 'Download Files' 
-                  : files.length === 1 
-                    ? jpgToAvif ? 'Download AVIF' : 'Download JPG' 
-                    : 'Download ZIP'
-                )
-              : (files.length === 1
-                  ? `Download ${jpgToAvif ? 'AVIF' : 'JPG'} File` 
-                  : `Download ZIP (${files.length} files)`)
-            }
-          </Button>
         </div>
       </div>
       
