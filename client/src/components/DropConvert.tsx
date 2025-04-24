@@ -118,7 +118,8 @@ const DropConvert = () => {
             error,
             isZipFile,
             outputMimeType,
-            extension
+            extension,
+            originalFileName
           } = event.data;
           
           if (workerStatus === 'progress') {
@@ -153,13 +154,13 @@ const DropConvert = () => {
                 
                 if (files.length === 1) {
                   // Make sure we preserve the file extension by explicitly setting it
-                  // Safely access file name or provide fallback
-                  let fileName = files[0] ? files[0].name : 'converted-file';
-                  // First remove any existing image extension
-                  fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
+                  // Use the originalFileName from the worker if available, otherwise generate it from the file
+                  let baseFileName = originalFileName || 
+                                    (files[0] ? files[0].name.replace(/\.(avif|png|jpe?g)$/i, '') : 'converted-file');
+                  
                   // Then add the proper extension based on what we received from the worker
                   const fileExtension = extension || (jpgToAvif ? '.avif' : '.jpg');
-                  fileName = fileName + fileExtension;
+                  const fileName = baseFileName + fileExtension;
                   
                   console.log('Downloading file with name:', fileName, 'extension:', fileExtension);
                   
