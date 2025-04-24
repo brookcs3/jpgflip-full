@@ -57,6 +57,15 @@ const DebugInfo = () => {
             <div>
               <strong>Default Mode:</strong> {siteConfig.defaultConversionMode}
             </div>
+            <div>
+              <strong>Domain:</strong> {siteConfig.domain}
+            </div>
+            <div>
+              <strong>Hostname contains 'jpgflip':</strong> {hostname.includes('jpgflip') ? 'Yes' : 'No'}
+            </div>
+            <div>
+              <strong>Document Referrer:</strong> {document.referrer || 'None'}
+            </div>
           </div>
         </CardContent>
         <CardFooter className="text-xs text-gray-500">

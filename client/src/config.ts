@@ -21,12 +21,24 @@ export interface SiteConfig {
 // Determine which configuration to use based on hostname
 export function getSiteConfig(): SiteConfig {
   const hostname = window.location.hostname;
+  const fullUrl = window.location.href;
+  const locationPath = window.location.pathname;
   
-  // Log for debugging
-  console.log('Current hostname:', hostname);
+  // Enhanced logging for debugging
+  console.log('Site configuration debug info:');
+  console.log('- Current hostname:', hostname);
+  console.log('- Full URL:', fullUrl);
+  console.log('- Path:', locationPath);
+  console.log('- Contains jpgflip?', hostname.includes('jpgflip'));
   
   // Production behavior - use jpgflip config when on jpgflip.com
-  if (hostname.includes('jpgflip') || hostname.includes('jpgflip.com')) {
+  // Improve detection to be more specific and robust
+  if (
+    hostname === 'jpgflip.com' || 
+    hostname === 'www.jpgflip.com' || 
+    hostname.includes('jpgflip.pages.dev') || 
+    hostname.includes('jpgflip')
+  ) {
     const jpgFlipConfig: SiteConfig = {
       siteName: 'JPGFlip',
       defaultConversionMode: 'jpgToAvif',
@@ -36,7 +48,7 @@ export function getSiteConfig(): SiteConfig {
       logoText: 'JPGFlip',
       domain: 'jpgflip.com'
     };
-    console.log('Running in JPGFlip mode with configuration:', jpgFlipConfig);
+    console.log('DETECTED JPGFLIP DOMAIN - Running in JPGFlip mode with configuration:', jpgFlipConfig);
     return jpgFlipConfig;
   }
   
@@ -50,7 +62,7 @@ export function getSiteConfig(): SiteConfig {
     logoText: 'AVIFlip',
     domain: 'aviflip.com'
   };
-  console.log('Running in AVIFlip mode with configuration:', aviFlipConfig);
+  console.log('Using default AVIFlip mode with configuration:', aviFlipConfig);
   return aviFlipConfig;
 }
 
