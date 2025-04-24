@@ -22,6 +22,7 @@ import {
   readFileOptimized,
   createDownloadUrl 
 } from '@/lib/utils';
+import { siteConfig } from '../config';
 
 // Type for our accepted files
 interface AcceptedFile extends File {
@@ -39,13 +40,16 @@ const DropConvert = () => {
   const [fileCount, setFileCount] = useState<number>(0); // Store file count for later reference
   
   // Mode selection: false = AVIF to JPG, true = JPG to AVIF
-  const [jpgToAvif, setJpgToAvif] = useState(false);
+  // Use site configuration to determine default conversion mode
+  const [jpgToAvif, setJpgToAvif] = useState(
+    siteConfig.defaultConversionMode === 'jpgToAvif'
+  );
   
   // Update the page title when conversion mode changes
   useEffect(() => {
     document.title = jpgToAvif 
-      ? "AVIFlip - Convert JPG to AVIF in your browser"
-      : "AVIFlip - Convert AVIF to JPG in your browser";
+      ? `${siteConfig.siteName} - Convert JPG to AVIF in your browser`
+      : `${siteConfig.siteName} - Convert AVIF to JPG in your browser`;
   }, [jpgToAvif]);
   
   // Handle file drop
