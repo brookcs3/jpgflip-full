@@ -24,9 +24,9 @@ export function getSiteConfig(): SiteConfig {
     return {
       siteName: 'JPGFlip',
       defaultConversionMode: 'jpgToAvif',
-      primaryColor: '#2563eb', // Blue
-      secondaryColor: '#4f46e5',
-      accentColor: '#3b82f6',
+      primaryColor: '#10b981', // Green (same as AVIFlip since you like the green)
+      secondaryColor: '#059669',
+      accentColor: '#34d399',
       logoText: 'JPGFlip',
       domain: 'jpgflip.com'
     };
