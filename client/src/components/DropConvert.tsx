@@ -126,8 +126,12 @@ const DropConvert = () => {
             setStatus('success');
             
             // Handle download based on number of files
+            // Force an immediate auto-download for all files
+            console.log('Triggering auto-download for conversion result...');
             setTimeout(() => {
               if (workerRef.current) {
+                // Log the result object to debug what's being returned
+                console.log('Download result object:', result, typeof result, Object.keys(result));
                 // Special handling for two files
                 if (isTwoFiles && secondFile) {
                   // Use correct MIME type for file format recognition, but force download with download attribute
