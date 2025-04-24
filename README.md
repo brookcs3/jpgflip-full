@@ -2,6 +2,7 @@
 
 <!-- Add your logo here when available -->
 <!-- ![AVIFlip Logo](./path/to/logo.svg) -->
+<!-- Trigger new deploy -->
 
 A high-performance, privacy-first image converter that transforms images between AVIF and JPG formats with exceptional speed and security.
 
