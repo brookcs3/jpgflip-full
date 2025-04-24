@@ -29,7 +29,7 @@ A high-performance, privacy-first image converter that transforms images between
 
 ### Using AVIFlip Online
 
-Simply visit [aviflip.app](https://aviflip.app) to start converting images instantly.
+Simply visit [aviflip.com](https://aviflip.com) to start converting images instantly.
 
 ### Running Locally
 
