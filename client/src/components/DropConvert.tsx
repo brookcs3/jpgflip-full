@@ -126,28 +126,46 @@ const DropConvert = () => {
               if (workerRef.current) {
                 // Special handling for two files
                 if (isTwoFiles && secondFile) {
-                  // Download first file - force download with octet-stream blob
-                  const forceDownloadBlob1 = new Blob([result], { type: 'application/octet-stream' });
+                  // Use correct MIME type for file format recognition, but force download with download attribute
+                  const forceDownloadBlob1 = new Blob([result], { 
+                    type: jpgToAvif ? 'image/avif' : 'image/jpeg'
+                  });
                   const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
+                  
+                  // Make sure to have proper file extensions
+                  let file1Name = files[0].name;
+                  // First remove any existing image extension
+                  file1Name = file1Name.replace(/\.(avif|png|jpe?g)$/i, '');
+                  // Then add the proper extension based on conversion mode
+                  file1Name = file1Name + (jpgToAvif ? '.avif' : '.jpg');
                   
                   const downloadLink1 = document.createElement('a');
                   downloadLink1.href = forceUrl1;
-                  downloadLink1.download = firstFileName;
-                  downloadLink1.setAttribute('download', firstFileName); // Explicit download attribute
+                  downloadLink1.download = file1Name;
+                  downloadLink1.setAttribute('download', file1Name); // Explicit download attribute
                   document.body.appendChild(downloadLink1);
                   downloadLink1.click();
                   document.body.removeChild(downloadLink1);
                   
                   // Small delay between downloads to prevent browser issues
                   setTimeout(() => {
-                    // Download second file - force download with octet-stream blob
-                    const forceDownloadBlob2 = new Blob([secondFile], { type: 'application/octet-stream' });
+                    // Download second file - use correct MIME type but force download with download attribute
+                    const forceDownloadBlob2 = new Blob([secondFile], { 
+                      type: jpgToAvif ? 'image/avif' : 'image/jpeg'
+                    });
                     const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
+                    
+                    // Make sure to have proper file extensions
+                    let file2Name = files[1].name;
+                    // First remove any existing image extension
+                    file2Name = file2Name.replace(/\.(avif|png|jpe?g)$/i, '');
+                    // Then add the proper extension based on conversion mode
+                    file2Name = file2Name + (jpgToAvif ? '.avif' : '.jpg');
                     
                     const downloadLink2 = document.createElement('a');
                     downloadLink2.href = forceUrl2;
-                    downloadLink2.download = secondFileName;
-                    downloadLink2.setAttribute('download', secondFileName); // Explicit download attribute
+                    downloadLink2.download = file2Name;
+                    downloadLink2.setAttribute('download', file2Name); // Explicit download attribute
                     document.body.appendChild(downloadLink2);
                     downloadLink2.click();
                     document.body.removeChild(downloadLink2);
@@ -157,15 +175,24 @@ const DropConvert = () => {
                 } 
                 // Handle single file or ZIP (3+ files)
                 else {
-                  // Force download with octet-stream MIME type to prevent browser rendering
-                  const forceDownloadBlob = new Blob([result], { type: 'application/octet-stream' });
+                  // Use the original MIME type (image/jpeg or image/avif) so the browser can recognize the format,
+                  // but use the download attribute to force download instead of rendering
+                  const forceDownloadBlob = new Blob([result], { 
+                    type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+                  });
                   const forceUrl = URL.createObjectURL(forceDownloadBlob);
                   
                   const downloadLink = document.createElement('a');
                   downloadLink.href = forceUrl;
                   
                   if (files.length === 1) {
-                    const fileName = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+                    // Make sure we preserve the file extension by explicitly setting it
+                    let fileName = files[0].name;
+                    // First remove any existing image extension
+                    fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
+                    // Then add the proper extension based on conversion mode
+                    fileName = fileName + (jpgToAvif ? '.avif' : '.jpg');
+                    
                     downloadLink.download = fileName;
                     downloadLink.setAttribute('download', fileName); // Explicit download attribute
                     console.log('Auto-download triggered for single file via worker:', fileName);
@@ -253,8 +280,10 @@ const DropConvert = () => {
         
         // Auto-download file after a short delay - force download with octet-stream
         setTimeout(() => {
-          // Create new blob with octet-stream MIME type to force download
-          const forceDownloadBlob = new Blob([fileData], { type: 'application/octet-stream' });
+          // Use the original MIME type (image/jpeg or image/avif) so the browser can recognize the format
+          const forceDownloadBlob = new Blob([fileData], { 
+            type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+          });
           const forceUrl = URL.createObjectURL(forceDownloadBlob);
           
           const downloadLink = document.createElement('a');
@@ -310,8 +339,10 @@ const DropConvert = () => {
         
         // Auto-download both files with force download
         setTimeout(() => {
-          // Convert to octet-stream to force download of first file
-          const forceDownloadBlob1 = new Blob([fileData1], { type: 'application/octet-stream' });
+          // Use proper MIME type for file format but force download with download attribute
+          const forceDownloadBlob1 = new Blob([fileData1], { 
+            type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+          });
           const forceUrl1 = URL.createObjectURL(forceDownloadBlob1);
           
           // Download first file
@@ -326,8 +357,10 @@ const DropConvert = () => {
           
           // Small delay between downloads to prevent browser issues
           setTimeout(() => {
-            // Convert to octet-stream to force download of second file
-            const forceDownloadBlob2 = new Blob([fileData2], { type: 'application/octet-stream' });
+            // Use proper MIME type for the second file too
+            const forceDownloadBlob2 = new Blob([fileData2], {
+              type: jpgToAvif ? 'image/avif' : 'image/jpeg'
+            });
             const forceUrl2 = URL.createObjectURL(forceDownloadBlob2);
             
             // Download second file
@@ -411,9 +444,9 @@ const DropConvert = () => {
         
         // Auto-download ZIP file after a short delay - force download
         setTimeout(() => {
-          // ZIP already has the application/zip MIME type which usually forces download,
-          // but let's still force it with application/octet-stream to be absolutely sure
-          const forceDownloadBlob = new Blob([zipBlob], { type: 'application/octet-stream' });
+          // ZIP files have application/zip MIME type which is already a download type,
+          // so we keep it as is with the download attribute to ensure it works properly
+          const forceDownloadBlob = new Blob([zipBlob], { type: 'application/zip' });
           const forceUrl = URL.createObjectURL(forceDownloadBlob);
           
           const downloadLink = document.createElement('a');
@@ -451,8 +484,11 @@ const DropConvert = () => {
         fetch(downloadUrl)
           .then(res => res.blob())
           .then(blob => {
-            // Create a new blob with application/octet-stream MIME type to force download
-            const forceDownloadBlob = new Blob([blob], { type: 'application/octet-stream' });
+            // Preserve the original MIME type but use the download attribute to force download
+            const type = files.length === 1
+              ? jpgToAvif ? 'image/avif' : 'image/jpeg'
+              : 'application/zip';
+            const forceDownloadBlob = new Blob([blob], { type });
             const forceUrl = URL.createObjectURL(forceDownloadBlob);
             
             // Create a hidden anchor element to trigger download
