@@ -106,8 +106,29 @@ const DropConvert = () => {
           } else if (workerStatus === 'success') {
             setProgress(100);
             const url = URL.createObjectURL(result);
+            console.log('Worker conversion success, setting download URL:', url);
             setDownloadUrl(url);
             setStatus('success');
+            
+            // Trigger download automatically after a short delay
+            setTimeout(() => {
+              if (workerRef.current) {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                
+                if (files.length === 1) {
+                  downloadLink.download = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+                } else {
+                  downloadLink.download = "converted_images.zip";
+                }
+                
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                console.log('Auto-download triggered for newly converted file');
+              }
+            }, 500);
           } else if (workerStatus === 'error') {
             setStatus('error');
             setErrorMessage(error || 'Conversion failed');
@@ -255,6 +276,35 @@ const DropConvert = () => {
     setFiles(files.filter((_, index) => index !== indexToRemove));
     if (files.length <= 1) {
       setStatus('idle');
+    }
+  };
+  
+  // Handle file download
+  const handleDownload = () => {
+    if (status === 'success' && downloadUrl) {
+      // Create a hidden anchor element to trigger download
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      
+      if (files.length === 1) {
+        // Single file download
+        downloadLink.download = files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg');
+        console.log('Downloading single file:', downloadLink.download);
+      } else {
+        // ZIP download
+        downloadLink.download = "converted_images.zip";
+        console.log('Downloading ZIP with', files.length, 'files');
+      }
+      
+      // Add to document, click, and remove
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Track analytics
+      if (window.performance && window.performance.now) {
+        console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
+      }
     }
   };
   
@@ -472,74 +522,26 @@ const DropConvert = () => {
         
         {/* Right side - Download button */}
         <div className="flex-1">
-          {/* Before conversion - disabled download button */}
-          {status !== 'success' && (
-            <Button
-              variant="default"
-              className="w-full"
-              disabled={true}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {files.length === 0 
-                ? 'Download Files' 
-                : files.length === 1 
-                  ? jpgToAvif ? 'Download AVIF' : 'Download JPG' 
-                  : 'Download ZIP'
-              }
-            </Button>
-          )}
-          
-          {/* Success state - single file */}
-          {status === 'success' && downloadUrl && files.length === 1 && (
-            <Button
-              variant="default"
-              className="w-full bg-success-600 hover:bg-success-700"
-              asChild
-            >
-              <a 
-                href={downloadUrl} 
-                download={files[0].name.replace(/\.(avif|png|jpe?g)$/i, jpgToAvif ? '.avif' : '.jpg')}
-                onClick={() => {
-                  // Report conversion success to analytics
-                  console.log('Conversion success - single file download');
-                  
-                  // Optional: track conversion time for performance analytics
-                  if (window.performance && window.performance.now) {
-                    console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
-                  }
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download {jpgToAvif ? 'AVIF' : 'JPG'}
-              </a>
-            </Button>
-          )}
-          
-          {/* Success state - multiple files */}
-          {status === 'success' && downloadUrl && files.length > 1 && (
-            <Button
-              variant="default"
-              className="w-full bg-success-600 hover:bg-success-700"
-              asChild
-            >
-              <a 
-                href={downloadUrl} 
-                download="converted_images.zip"
-                onClick={() => {
-                  // Report conversion success to analytics
-                  console.log('Conversion success - batch download', files.length, 'files');
-                  
-                  // Optional: track conversion time for performance analytics
-                  if (window.performance && window.performance.now) {
-                    console.log('Conversion time:', Math.round(window.performance.now()), 'ms');
-                  }
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download ZIP ({files.length} files)
-              </a>
-            </Button>
-          )}
+          {/* Download button - changes state based on conversion status */}
+          <Button
+            variant={status === 'success' ? "default" : "outline"}
+            className={`w-full ${status === 'success' ? 'bg-success-600 hover:bg-success-700' : ''}`}
+            disabled={status !== 'success'}
+            onClick={handleDownload}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {status !== 'success' 
+              ? (files.length === 0 
+                  ? 'Download Files' 
+                  : files.length === 1 
+                    ? jpgToAvif ? 'Download AVIF' : 'Download JPG' 
+                    : 'Download ZIP'
+                )
+              : (files.length === 1
+                  ? `Download ${jpgToAvif ? 'AVIF' : 'JPG'} File` 
+                  : `Download ZIP (${files.length} files)`)
+            }
+          </Button>
         </div>
       </div>
       
