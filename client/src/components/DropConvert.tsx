@@ -112,7 +112,10 @@ const DropConvert = () => {
             secondFile,
             firstFileName,
             secondFileName,
-            isZipFile
+            isZipFile,
+            fileData,
+            outputMimeType,
+            extension
           } = event.data;
           
           if (workerStatus === 'progress') {
@@ -195,10 +198,18 @@ const DropConvert = () => {
                 } 
                 // Handle single file or ZIP (3+ files)
                 else {
-                  // Use the original MIME type (image/jpeg or image/avif) so the browser can recognize the format,
-                  // but use the download attribute to force download instead of rendering
-                  const forceDownloadBlob = new Blob([result], { 
-                    type: jpgToAvif ? 'image/avif' : 'image/jpeg' 
+                  // Use the file data and MIME type received from the worker
+                  // Make sure we have the fileData from the worker
+                  const actualFileData = fileData || new Uint8Array();
+                  console.log('Using file data for download:', actualFileData);
+                  
+                  // Use the MIME type that matches the conversion direction
+                  const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
+                  console.log('Using MIME type for download:', actualMimeType);
+                  
+                  // Create the download blob
+                  const forceDownloadBlob = new Blob([actualFileData], { 
+                    type: actualMimeType
                   });
                   const forceUrl = URL.createObjectURL(forceDownloadBlob);
                   
@@ -210,10 +221,11 @@ const DropConvert = () => {
                     let fileName = files[0].name;
                     // First remove any existing image extension
                     fileName = fileName.replace(/\.(avif|png|jpe?g)$/i, '');
-                    // Then add the proper extension based on conversion mode - FORCE THE RIGHT EXTENSION
-                    // When jpgToAvif is true, we're converting FROM JPG TO AVIF, so use .avif
-                    // When jpgToAvif is false, we're converting FROM AVIF TO JPG, so use .jpg
-                    fileName = fileName + (jpgToAvif ? '.avif' : '.jpg');
+                    // Then add the proper extension based on what we received from the worker or fallback to our toggle
+                    const fileExtension = extension || (jpgToAvif ? '.avif' : '.jpg');
+                    fileName = fileName + fileExtension;
+                    
+                    console.log('Downloading file with name:', fileName, 'extension:', fileExtension);
                     
                     downloadLink.download = fileName;
                     downloadLink.setAttribute('download', fileName); // Explicit download attribute

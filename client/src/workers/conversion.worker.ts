@@ -23,6 +23,9 @@ self.onmessage = async (event) => {
       self.postMessage({
         status: 'success', 
         result: resultBlob,
+        fileData: fileData, // Explicitly send the file data as ArrayBuffer
+        outputMimeType, // Send mime type information
+        extension: outputExtension, // Send extension info
         progress: 100
       });
       
