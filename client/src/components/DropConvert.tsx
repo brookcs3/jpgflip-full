@@ -119,7 +119,8 @@ const DropConvert = () => {
             isZipFile,
             outputMimeType,
             extension,
-            originalFileName
+            originalFileName,
+            type: messageType
           } = event.data;
           
           if (workerStatus === 'progress') {
@@ -135,24 +136,35 @@ const DropConvert = () => {
             // Handle download based on number of files
             console.log('Triggering auto-download for conversion result...');
             setTimeout(() => {
-              if (workerRef.current && result instanceof Blob) {
-                // Log the result object to debug what's being returned
-                console.log('Download result object:', result, typeof result, Object.keys(result));
+              if (result instanceof Blob) {
+                // Log the result object and file information
+                console.log('Download result object:', result);
+                console.log('Worker result blob size:', result.size, 'bytes, type:', result.type);
                 
-                // Use the MIME type that matches the conversion direction
+                // Use the MIME type that matches the conversion direction or default to the worker-provided one
                 const actualMimeType = outputMimeType || (jpgToAvif ? 'image/avif' : 'image/jpeg');
                 console.log('Using MIME type for download:', actualMimeType);
                 
-                // Use application/octet-stream MIME type to force download behavior in most browsers
-                const forceDownloadBlob = new Blob([result], { 
-                  type: 'application/octet-stream'
-                });
+                // Force download behavior with appropriate MIME type
+                let downloadMimeType = 'application/octet-stream';
+                
+                // For ZIP files, keep the ZIP MIME type
+                if (isZipFile) {
+                  downloadMimeType = 'application/zip';
+                }
+                
+                // Create a new blob with the download MIME type
+                const forceDownloadBlob = new Blob([result], { type: downloadMimeType });
                 const forceUrl = URL.createObjectURL(forceDownloadBlob);
                 
+                // Create download link
                 const downloadLink = document.createElement('a');
                 downloadLink.href = forceUrl;
                 
-                if (files.length === 1) {
+                // Handle single vs multiple files based on conversion type
+                const isSingleFile = files.length === 1 && !isZipFile;
+                
+                if (isSingleFile) {
                   // Make sure we preserve the file extension by explicitly setting it
                   // Use the originalFileName from the worker if available, otherwise generate it from the file
                   let baseFileName = originalFileName || 
@@ -167,7 +179,8 @@ const DropConvert = () => {
                   downloadLink.download = fileName;
                   downloadLink.setAttribute('download', fileName); // Explicit download attribute
                   console.log('Auto-download triggered for single file via worker:', fileName);
-                } else if (isZipFile || files.length > 1) {
+                } else {
+                  // ZIP download for batch processing
                   downloadLink.download = "converted_images.zip";
                   downloadLink.setAttribute('download', "converted_images.zip"); // Explicit download attribute
                   console.log('Auto-download triggered for ZIP with', files.length, 'files via worker');
@@ -188,6 +201,8 @@ const DropConvert = () => {
                 setTimeout(() => document.body.removeChild(downloadLink), 100);
               } else {
                 console.error('Worker did not return a valid Blob:', result);
+                setStatus('error');
+                setErrorMessage('Conversion failed - invalid result');
               }
             }, 500);
           } else if (workerStatus === 'error') {
