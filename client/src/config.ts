@@ -21,48 +21,51 @@ export interface SiteConfig {
 // Determine which configuration to use based on hostname
 export function getSiteConfig(): SiteConfig {
   const hostname = window.location.hostname;
-  const fullUrl = window.location.href;
-  const locationPath = window.location.pathname;
   
-  // Enhanced logging for debugging
-  console.log('Site configuration debug info:');
-  console.log('- Current hostname:', hostname);
-  console.log('- Full URL:', fullUrl);
-  console.log('- Path:', locationPath);
-  console.log('- Contains jpgflip?', hostname.includes('jpgflip'));
+  // Simple forced override for testing - add ?site=jpgflip to URL to force JPGFlip mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceSite = urlParams.get('site');
   
-  // Production behavior - use jpgflip config when on jpgflip.com
-  // Improve detection to be more specific and robust
-  if (
-    hostname === 'jpgflip.com' || 
-    hostname === 'www.jpgflip.com' || 
-    hostname.includes('jpgflip.pages.dev') || 
-    hostname.includes('jpgflip')
-  ) {
+  if (forceSite === 'jpgflip') {
     const jpgFlipConfig: SiteConfig = {
       siteName: 'JPGFlip',
       defaultConversionMode: 'jpgToAvif',
-      primaryColor: '#10b981', // Green (same as AVIFlip since you like the green)
+      primaryColor: '#10b981',
       secondaryColor: '#059669',
       accentColor: '#34d399',
       logoText: 'JPGFlip',
       domain: 'jpgflip.com'
     };
-    console.log('DETECTED JPGFLIP DOMAIN - Running in JPGFlip mode with configuration:', jpgFlipConfig);
+    console.log('FORCED JPGFLIP MODE via URL parameter');
     return jpgFlipConfig;
   }
   
-  // Default to aviflip config
+  // Very simple hostname check - exact match only to avoid confusion
+  if (hostname === 'jpgflip.com' || hostname === 'www.jpgflip.com') {
+    const jpgFlipConfig: SiteConfig = {
+      siteName: 'JPGFlip',
+      defaultConversionMode: 'jpgToAvif',
+      primaryColor: '#10b981',
+      secondaryColor: '#059669',
+      accentColor: '#34d399',
+      logoText: 'JPGFlip',
+      domain: 'jpgflip.com'
+    };
+    console.log('MATCHED JPGFLIP.COM DOMAIN EXACTLY');
+    return jpgFlipConfig;
+  }
+  
+  // Default to aviflip config for all other cases
   const aviFlipConfig: SiteConfig = {
     siteName: 'AVIFlip',
     defaultConversionMode: 'avifToJpg',
-    primaryColor: '#10b981', // Green
+    primaryColor: '#10b981',
     secondaryColor: '#059669',
     accentColor: '#34d399',
     logoText: 'AVIFlip',
     domain: 'aviflip.com'
   };
-  console.log('Using default AVIFlip mode with configuration:', aviFlipConfig);
+  console.log('Using AVIFlip configuration (default)');
   return aviFlipConfig;
 }
 
