@@ -10,6 +10,9 @@ rm -rf /tmp/jpgflip-clone/*
 cp -r jpgflip-full/* /tmp/jpgflip-clone/
 cp -r jpgflip-full/.* /tmp/jpgflip-clone/ 2>/dev/null || true
 
+# Ensure CNAME file exists in the root
+cp jpgflip-full/CNAME /tmp/jpgflip-clone/ 2>/dev/null || echo "jpgflip.com" > /tmp/jpgflip-clone/CNAME
+
 # Get current directory
 CURRENT_DIR=$(pwd)
 
