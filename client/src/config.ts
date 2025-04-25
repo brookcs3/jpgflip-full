@@ -42,18 +42,32 @@ const aviFlipConfig: SiteConfig = {
 
 // Determine which configuration to use based on hostname and URL parameters
 export function getSiteConfig(): SiteConfig {
-  // First check URL parameter (?site=jpgflip or ?site=aviflip)
+  // First check URL parameter (any of ?site=jpgflip or ?jpgflip or ?mode=jpgflip)
   const urlParams = new URLSearchParams(window.location.search);
   const forceSite = urlParams.get('site')?.toLowerCase();
   
+  // Check for site parameter
   if (forceSite === 'jpgflip') {
-    console.log('USING JPGFLIP CONFIG: URL parameter override');
+    console.log('USING JPGFLIP CONFIG: URL site parameter override');
     return jpgFlipConfig;
   }
   
   if (forceSite === 'aviflip') {
-    console.log('USING AVIFLIP CONFIG: URL parameter override');
+    console.log('USING AVIFLIP CONFIG: URL site parameter override');
     return aviFlipConfig;
+  }
+  
+  // Check for direct parameter (no value needed)
+  if (urlParams.has('jpgflip')) {
+    console.log('USING JPGFLIP CONFIG: Direct URL parameter override');
+    return jpgFlipConfig;
+  }
+  
+  // Check for mode parameter
+  const mode = urlParams.get('mode')?.toLowerCase();
+  if (mode === 'jpgflip') {
+    console.log('USING JPGFLIP CONFIG: URL mode parameter override');
+    return jpgFlipConfig;
   }
   
   // Then check hostname exactly

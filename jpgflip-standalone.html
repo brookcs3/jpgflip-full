@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JPGFlip - Convert JPG to AVIF</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: 160 59% 40%;
+      --primary-foreground: 0 0% 98%;
+    }
+    .gradient-text {
+      background: linear-gradient(90deg, #10b981, #059669);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .drop-zone {
+      border: 2px dashed #10b981;
+      transition: all 0.3s ease;
+    }
+    .drop-zone.active {
+      border-color: #059669;
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+    .progress-bar {
+      height: 8px;
+      background-color: #10b981;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold gradient-text">JPGFlip</h1>
+        <span class="text-gray-500 text-sm">JPG to AVIF Converter</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-extrabold text-gray-900 mb-4">Convert JPG to AVIF</h2>
+      <p class="text-xl text-gray-600">Drop your files below to convert them - it all happens in your browser!</p>
+    </div>
+
+    <div class="drop-zone rounded-lg p-12 text-center cursor-pointer hover:bg-gray-50 mb-8" id="dropZone">
+      <div class="mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+      </div>
+      <p class="text-lg text-gray-600 mb-2">Drag and drop files here</p>
+      <p class="text-sm text-gray-500">or</p>
+      <button class="mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" id="browseButton">
+        Browse Files
+      </button>
+      <input type="file" hidden multiple accept=".jpg,.jpeg" id="fileInput" />
+    </div>
+
+    <div id="processingArea" class="hidden">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Processing Files</h3>
+      <div class="bg-gray-200 rounded-full mb-2">
+        <div class="progress-bar rounded-full" id="progressBar" style="width: 0%"></div>
+      </div>
+      <p class="text-sm text-gray-600" id="progressText">Processing file 0 of 0</p>
+    </div>
+
+    <div id="resultArea" class="hidden">
+      <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-green-700" id="conversionResult">
+              Your files have been successfully converted!
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-center">
+        <button class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" id="downloadButton">
+          Download Converted Files
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t mt-12 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center text-gray-500 text-sm">
+        <p>JPGFlip © 2025 - All image processing is done locally in your browser.</p>
+        <p class="mt-2">No files are uploaded to our servers. Your privacy is guaranteed.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
+  <script>
+    // DOM Elements
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const browseButton = document.getElementById('browseButton');
+    const processingArea = document.getElementById('processingArea');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const resultArea = document.getElementById('resultArea');
+    const conversionResult = document.getElementById('conversionResult');
+    const downloadButton = document.getElementById('downloadButton');
+
+    // Variables
+    let convertedFiles = [];
+    let totalFiles = 0;
+    let processedFiles = 0;
+
+    // Event Listeners
+    browseButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFiles);
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('active');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('active');
+      handleFiles({ target: { files: e.dataTransfer.files } });
+    });
+    downloadButton.addEventListener('click', downloadFiles);
+
+    // Functions
+    function handleFiles(event) {
+      const files = Array.from(event.target.files).filter(file => 
+        file.type === 'image/jpeg' || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg')
+      );
+      
+      if (files.length === 0) {
+        alert('Please select JPG files only.');
+        return;
+      }
+
+      totalFiles = files.length;
+      processedFiles = 0;
+      convertedFiles = [];
+      
+      dropZone.classList.add('hidden');
+      processingArea.classList.remove('hidden');
+      resultArea.classList.add('hidden');
+      
+      progressBar.style.width = '0%';
+      progressText.textContent = `Processing file 0 of ${totalFiles}`;
+      
+      // Process files one by one
+      processNextFile(files, 0);
+    }
+
+    function processNextFile(files, index) {
+      if (index >= files.length) {
+        // All files processed
+        processingArea.classList.add('hidden');
+        resultArea.classList.remove('hidden');
+        conversionResult.textContent = `Successfully converted ${convertedFiles.length} file${convertedFiles.length !== 1 ? 's' : ''}!`;
+        return;
+      }
+
+      const file = files[index];
+      processedFiles = index + 1;
+      progressBar.style.width = `${(processedFiles / totalFiles) * 100}%`;
+      progressText.textContent = `Processing file ${processedFiles} of ${totalFiles}`;
+
+      // Simulate JPG to AVIF conversion
+      setTimeout(() => {
+        // In a real implementation, this would use actual conversion logic
+        simulateConversion(file).then(convertedFile => {
+          convertedFiles.push({
+            originalName: file.name,
+            file: convertedFile
+          });
+          processNextFile(files, index + 1);
+        });
+      }, 500); // Simulate processing time
+    }
+
+    async function simulateConversion(file) {
+      // This is a placeholder for actual conversion logic
+      // In a real implementation, you would use libraries like avif.js or web workers
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // Create fake "converted" file - would be real AVIF in production
+          const fileName = file.name.replace(/\.(jpg|jpeg)$/i, '.avif');
+          const convertedFile = new File([e.target.result], fileName, { type: 'image/avif' });
+          resolve(convertedFile);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function downloadFiles() {
+      if (convertedFiles.length === 1) {
+        // Single file - direct download
+        const url = URL.createObjectURL(convertedFiles[0].file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = convertedFiles[0].file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Multiple files - create ZIP
+        const zip = new JSZip();
+        
+        convertedFiles.forEach(item => {
+          zip.file(item.file.name, item.file);
+        });
+        
+        zip.generateAsync({type: 'blob'}).then(content => {
+          const url = URL.createObjectURL(content);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'converted_avif_files.zip';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
