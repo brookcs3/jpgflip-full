@@ -1,13 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { siteConfig } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const DebugInfo = () => {
   const [showDebug, setShowDebug] = useState(false);
-  const hostname = window.location.hostname;
+  const [siteMode, setSiteMode] = useState<string>('');
+  const [modeReason, setModeReason] = useState<string>('');
+  
+  const hostname = window.location.hostname.toLowerCase();
   const protocol = window.location.protocol;
   const fullUrl = window.location.href;
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceSite = urlParams.get('site')?.toLowerCase();
+
+  useEffect(() => {
+    // Determine site mode based on URL and hostname
+    if (forceSite === 'jpgflip') {
+      setSiteMode('JPGFlip');
+      setModeReason('URL parameter override');
+    } else if (forceSite === 'aviflip') {
+      setSiteMode('AVIFlip');
+      setModeReason('URL parameter override');
+    } else if (hostname === 'jpgflip.com' || hostname === 'www.jpgflip.com') {
+      setSiteMode('JPGFlip');
+      setModeReason('Hostname match');
+    } else if (hostname === 'aviflip.com' || hostname === 'www.aviflip.com') {
+      setSiteMode('AVIFlip');
+      setModeReason('Hostname match');
+    } else {
+      setSiteMode('AVIFlip');
+      setModeReason('Default fallback');
+    }
+  }, [hostname, forceSite]);
 
   if (!showDebug) {
     return (
@@ -42,6 +68,22 @@ const DebugInfo = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <strong>Current Mode:</strong> 
+              <Badge variant={siteMode === 'JPGFlip' ? 'outline' : 'default'}>
+                {siteMode}
+              </Badge>
+              <span className="text-xs text-muted-foreground">({modeReason})</span>
+            </div>
+            
+            <div className="p-2 bg-muted rounded-md mb-2">
+              <div className="font-medium mb-1">URL Parameters:</div>
+              <div><strong>site=</strong> {forceSite || 'Not set'}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Add ?site=jpgflip or ?site=aviflip to force a mode
+              </div>
+            </div>
+            
             <div>
               <strong>Hostname:</strong> {hostname}
             </div>
@@ -59,9 +101,6 @@ const DebugInfo = () => {
             </div>
             <div>
               <strong>Domain:</strong> {siteConfig.domain}
-            </div>
-            <div>
-              <strong>Hostname contains 'jpgflip':</strong> {hostname.includes('jpgflip') ? 'Yes' : 'No'}
             </div>
             <div>
               <strong>Document Referrer:</strong> {document.referrer || 'None'}
