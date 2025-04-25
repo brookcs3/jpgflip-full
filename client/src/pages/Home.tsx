@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import HowItWorks from "@/components/HowItWorks";
 import DropConvert from "@/components/DropConvert";
 import TechnicalDetails from "@/components/TechnicalDetails";
+import { siteConfig } from "@/config";
 
 export default function Home() {
   return (
@@ -15,7 +16,9 @@ export default function Home() {
             {/* Header Section */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                Convert AVIF to JPG
+                {siteConfig.defaultConversionMode === 'avifToJpg' 
+                  ? 'Convert AVIF to JPG' 
+                  : 'Convert JPG to AVIF'}
               </h1>
               <p className="mt-3 text-xl text-gray-500 sm:mt-4">
                 Fast, free, and completely private - no files are uploaded to any server
