@@ -1,0 +1,22 @@
+Redirect ads.txt to:
+https://srv.adstxtmanager.com/19390/jpgflip.com
+
+Methods:
+.htaccess:
+Redirect 301 /ads.txt https://srv.adstxtmanager.com/19390/jpgflip.com
+
+Nginx:
+server {
+    location ~ /ads.txt {
+        return 301 https://srv.adstxtmanager.com/19390/jpgflip.com;
+    }
+}
+
+PHP Redirect:
+<?php
+header('Location: https://srv.adstxtmanager.com/19390/jpgflip.com');
+exit;
+?>
+
+Curl Command:
+curl -L https://srv.adstxtmanager.com/19390/jpgflip.com > ads.txt
